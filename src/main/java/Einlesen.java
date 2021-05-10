@@ -162,10 +162,8 @@ public class Einlesen {
 
         try {
             Scanner scanner = new Scanner(file);
-            while (scanner.hasNext()) {
-                double x1 = Double.valueOf(scanner.next());
-                double x2 = Double.valueOf(scanner.next());
-                int y = Integer.valueOf(scanner.next());
+            while (scanner.hasNextLine()) {
+                scanner.nextLine();
                 //hier koennte man die minimalen und maximalen Eingabewerte ermitteln
                 //um sie beim Einlesen auf den Bereich [0, 1] zu skalieren
                 dim++;
