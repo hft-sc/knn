@@ -17,7 +17,7 @@ public class KNN {
 	private int batchSize = 1000;	
 	private double[][] gradient;
 
-	// Parameter für Backprobagation
+	// Parameter fÃ¼r Backprobagation
 	private double alpha  = 0.5;    // Fehlerrate fuer Backprobagation
 	private int maxIter   = 1;      // Anzahl Iterationen bei Fehlerminimierung
 	private int maxEpoche = 10;// Anzahl Iterationen bei Fehlerminimierung
@@ -41,7 +41,7 @@ public class KNN {
 			netz[l + 1] = new int[anzahlKnotenProHiddenSchicht[l]];
 		}
 
-		for (int l = 0; l < m; l++) {// alle Schichten werden mit fortlaufenden Knotennummern gefüllt
+		for (int l = 0; l < m; l++) {// alle Schichten werden mit fortlaufenden Knotennummern gefÃ¼llt
 			for (int i = 0; i < netz[l].length; i++) {
 				netz[l][i] = knotenNr;
 				knotenNr++;
@@ -110,7 +110,7 @@ public class KNN {
 			System.out.println("-Epoche: " + epoche + " " + anzFehler + " " + fehler + " minAnzFehler " + minAnzFehler + " minFehler " + minFehler +" " + goBack + " " + alpha);
 			if (epoche >= maxEpoche || anzFehler == 0)	stop = true;
 			
-//			if(anzFehler < minAnzFehler || (anzFehler == minAnzFehler && fehler < minFehler)) {//neue Bestlösung
+//			if(anzFehler < minAnzFehler || (anzFehler == minAnzFehler && fehler < minFehler)) {//neue BestlÃ¶sung
 //				minAnzFehler = anzFehler;
 //				for(int i=0;i<n;i++){
 //					for(int j=0;j<n;j++){
@@ -119,7 +119,7 @@ public class KNN {
 //				}
 //		    }
 			
-//			if(fehler < minFehler && anzFehler == minAnzFehler) {//neue Bestlösung
+//			if(fehler < minFehler && anzFehler == minAnzFehler) {//neue BestlÃ¶sung
 //				minFehler = fehler;
 //				for(int i=0;i<n;i++){
 //					for(int j=0;j<n;j++){
@@ -220,7 +220,7 @@ public class KNN {
 //			fehler    			  = fehlerVektor[0];
 //			anzFehler 			  = (int)fehlerVektor[1];
 //			
-//			if(anzFehler < minAnzFehler) {//neue Bestlösung
+//			if(anzFehler < minAnzFehler) {//neue BestlÃ¶sung
 //				minAnzFehler = anzFehler;
 //				for(int i=0;i<n;i++){
 //					for(int j=0;j<n;j++){
@@ -305,7 +305,7 @@ public class KNN {
 	private void forward() {
 		
 		/*
-		 * hier die Übungsaufgabe auszuführen :-)
+		 * hier die Ãœbungsaufgabe auszufÃ¼hren :-)
 		 */
 		
 		
@@ -380,7 +380,7 @@ public class KNN {
 	
 	private void eingabeSchichtInitialisieren(double[] input) {
 		// Alle Bias-Knoten initialisieren
-		for (int i = 0; i < netz.length - 1; i++) {// über alle Schichten
+		for (int i = 0; i < netz.length - 1; i++) {// Ã¼ber alle Schichten
 			int knoten = netz[i][0]; // der erste Knoten einer Schicht ist Bias!
 			if (!bias[knoten])
 				System.out.println("ups, nicht-Bias-Knoten als bias initialisiert");
@@ -390,7 +390,7 @@ public class KNN {
 
 		// Alle Knoten der Eingabeschicht ab dem 2. Knoten mit Eingabe belegen (1.
 		// Knoten ist ja Bias!)
-		for (int i = 0; i < input.length - 1; i++) {// der letzte Wert in input ist der output und gehört nicht zur
+		for (int i = 0; i < input.length - 1; i++) {// der letzte Wert in input ist der output und gehÃ¶rt nicht zur
 													// Eingabe
 			in[i + 1] = input[i]; // in[0] ist Bias, deshalb i.ten Input bei bei in[i+1] speichern
 			a[i + 1] = input[i];
@@ -528,7 +528,7 @@ public class KNN {
 	
 	public void evaluierenGUIII(double[][] daten) {
 		/*
-		 * für GUI_Beispiele
+		 * fÃ¼r GUI_Beispiele
 		 * zeigt grafisch den output des NN fuer alle Punkte (x1, x2) im angegebenen Intervall
 		 * zeigt die angegenben Daten zum Vergleich ebenfalls an
 		 * die Ausgabe wurde von einem Studenten entwickelt!
@@ -572,7 +572,7 @@ public class KNN {
 			double[] input = new double[3];
 			input[0] = x[0]/100.;
 			input[1] = x[1]/100.;
-			input[2] = 1.;//wird nicht benötigt
+			input[2] = 1.;//wird nicht benÃ¶tigt
 			
 		
 			
@@ -595,7 +595,7 @@ public class KNN {
 	 
 	 
 /*
- * Generierung des Vorlesungsbeispiel; hier können Forward/Backward geübt werden	 
+ * Generierung des Vorlesungsbeispiel; hier kÃ¶nnen Forward/Backward geÃ¼bt werden	 
  */
 	 
 //		public void berechnungVorlesungsBeispiel(double[][] liste) {
@@ -816,7 +816,7 @@ public class KNN {
 //				teilFehler = fehler3(liste);
 //				fehler     = teilFehler[0];
 //				anzFehler  = (int)teilFehler[1]; 
-//				if(anzFehler <= minAnzFehler) {//neue Bestlösung
+//				if(anzFehler <= minAnzFehler) {//neue BestlÃ¶sung
 //					minAnzFehler = anzFehler;
 //			    }
 //				System.out.println("-Epoche: " + epoche + " " + anzFehler + " - Fehler " + fehler + " minAnzFehler " + minAnzFehler + " " + alpha + " " + zaehler);
@@ -853,7 +853,7 @@ public class KNN {
 //					}
 //				}
 //			}
-//			//Gradientenanteil für Muster berechnen
+//			//Gradientenanteil fÃ¼r Muster berechnen
 //			for (int l = 0; l < netz.length - 1; l++) {
 //				for (int nri = 0; nri < netz[l].length; nri++) {
 //					int i = netz[l][nri];
