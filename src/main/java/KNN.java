@@ -16,7 +16,7 @@ public class KNN {
     private double[][] gradient;
 
     /**
-     * Fehlerrate für Backprobagation
+     * Fehlerrate für Backprobagation. Gewichtung des Gradienten
      */
     private double alpha = 0.5;
     /**
@@ -276,7 +276,7 @@ public class KNN {
 
     /**
      * backward-Pass
-     *
+     * <p>
      * delta = error
      */
     private void deltaOutputLayer(double klasse) {
@@ -325,7 +325,7 @@ public class KNN {
     }
 
     /**
-     * Aktivierungsfunktion und deren Ableitung
+     * Aktivierungsfunktion und deren Ableitung (sigmuid)
      */
     private double aktivierungsFunktion(double x) {
         return (1.0 / (1.0 + Math.exp(-x)));
@@ -423,18 +423,22 @@ public class KNN {
         return fehler;
     }
 
+    /**
+     * @return An array with 2 values. First one is the sum of the difference of predicted and actual value.
+     * Second one is the number of wrong predictions
+     */
     private double[] fehler3(double[][] liste) {
-        double[] fehler = new double[2];
-        fehler[0] = 0.0;
-        fehler[1] = 0.0;
+        double[] fehler = {0.0, 0.0};
 
         double klasse;
-        for (int s = 0; s < liste.length; s++) {
-            eingabeSchichtInitialisieren(liste[s]);
-            klasse = liste[s][liste[s].length - 1];
+        for (double[] doubles : liste) {
+            eingabeSchichtInitialisieren(doubles);
+            klasse = doubles[doubles.length - 1];
             forward();
             fehler[0] += Math.pow(klasse - a[n - 1], 2);
-            if ((a[n - 1] < 0.5 && (int) klasse == 1) || (a[n - 1] >= 0.5 && (int) klasse == 0)) fehler[1]++;
+            if ((a[n - 1] < 0.5 && (int) klasse == 1) || (a[n - 1] >= 0.5 && (int) klasse == 0)) {
+                fehler[1]++;
+            }
         }
         return fehler;
     }
