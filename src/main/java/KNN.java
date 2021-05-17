@@ -15,12 +15,25 @@ public class KNN {
     private int batchSize = 1000;
     private double[][] gradient;
 
-    // Parameter für Backprobagation
-    private double alpha = 0.5;    // Fehlerrate fuer Backprobagation
-    private int maxIter = 1;      // Anzahl Iterationen bei Fehlerminimierung
-    private int maxEpoche = 10;// Anzahl Iterationen bei Fehlerminimierung
+    /**
+     * Fehlerrate für Backprobagation
+     */
+    private double alpha = 0.5;
+    /**
+     * Anzahl Iterationen bei Fehlerminimierung
+     */
+    private int maxIter = 1;
+    /**
+     * Anzahl Iterationen bei Fehlerminimierung
+     */
+    private int maxEpoche = 10;
 
 
+    /**
+     * @param anzahlEingabewerte
+     * @param anzahlKnotenProHiddenSchicht The length of array describes number of hidden layers.
+     *                                     Each value describes how many nodes are in the respective layer
+     */
     public KNN(int anzahlEingabewerte, int[] anzahlKnotenProHiddenSchicht) {
 
         this.m = anzahlKnotenProHiddenSchicht.length + 2;// Anzahl Hiddenschichte + Eingabeschicht + Ausgabeschicht
@@ -28,17 +41,20 @@ public class KNN {
         int knotenNr = 0;
 
         // Eingabeschicht
-        netz[0] = new int[anzahlEingabewerte + 1];// der erste Knoten der ersten Schicht ist ein Bias, deshalb plus 1
+        // der erste Knoten der ersten Schicht ist ein Bias, deshalb plus 1
+        netz[0] = new int[anzahlEingabewerte + 1];
 
         // Ausgabeschicht
-        netz[m - 1] = new int[1]; // es gibt einen Ausgabeknoten, da ein Klassifikationsproblem vorliegt
+        // es gibt einen Ausgabeknoten, da ein Klassifikationsproblem vorliegt
+        netz[m - 1] = new int[1];
 
         // Hiddenschichten
         for (int l = 0; l < anzahlKnotenProHiddenSchicht.length; l++) {
             netz[l + 1] = new int[anzahlKnotenProHiddenSchicht[l]];
         }
 
-        for (int l = 0; l < m; l++) {// alle Schichten werden mit fortlaufenden Knotennummern gefüllt
+        // alle Schichten werden mit fortlaufenden Knotennummern gefüllt
+        for (int l = 0; l < m; l++) {
             for (int i = 0; i < netz[l].length; i++) {
                 netz[l][i] = knotenNr;
                 knotenNr++;
@@ -56,20 +72,18 @@ public class KNN {
         for (int l = 0; l < m; l++) {
             for (int i = 0; i < netz[l].length; i++) {
                 knotenNr = netz[l][i];
-                if (i == 0 && l < m - 1)
-                    bias[knotenNr] = true;// der erste Knoten einer Schicht wird bias (aussnahme in der ausgabeschicht)
-                else
-                    bias[knotenNr] = false;
+                // der erste Knoten einer Schicht wird bias (aussnahme in der ausgabeschicht)
+                bias[knotenNr] = i == 0 && l < m - 1;
             }
         }
     }
 
-    /*
+    /**
      * Trainieren mit Backpropagation Algorithmus
+     *
+     * @param liste Muster
      */
     public void trainieren(double[][] liste) {
-        double[][] optAnzGewichte = new double[n][n];//bestes Ergebnis bzgl. anzFehler
-        double[][] optFehGewichte = new double[n][n];//bestes Ergebnis bzgl. fehler
         double[] fehlerVektor;
 
         double klasse;
@@ -78,20 +92,18 @@ public class KNN {
 
         gewichteInitialisieren();
 
-        int intervall = 50;
         int minAnzFehler = Integer.MAX_VALUE;
         double minFehler = Double.MAX_VALUE;
         boolean goBack = false;
         boolean stop = false;
         int epoche = 0;
-        int anzVb = 0;
 
         while (!stop) {
             epoche++;
 
-            for (int s = 0; s < liste.length; s++) {
-                eingabeSchichtInitialisieren(liste[s]);
-                klasse = liste[s][liste[s].length - 1];
+            for (double[] doubles : liste) {
+                eingabeSchichtInitialisieren(doubles);
+                klasse = doubles[doubles.length - 1]; // 0 or 1. Because its a classification problem
                 forward();
                 backward(klasse);
             }
@@ -231,21 +243,52 @@ public class KNN {
 //		}
 //	}
 
-    /*
-     * backward-Pass
+    /**
+     * Forward-Pass
      */
-    private void deltaAusgabeSchicht(double klasse) {
-        int ausgabeSchicht = netz.length - 1;
-        for (int nrj = 0; nrj < netz[ausgabeSchicht].length; nrj++) {
-            int j = netz[ausgabeSchicht][nrj];
-            double yj = klasse;
-            delta[j] = ableitungAktivierungsFunktion(in[j]) * (a[j] - yj);
+    private void forward() {
+        // Skip bias layer, so int layer = 1
+        for (int layer = 1; layer < netz.length; layer++) {
+            for (int nodeNumber = 0; nodeNumber < netz[layer].length; nodeNumber++) {
+                int nodeNumberInCurrentLayer = netz[layer][nodeNumber];
+                if (!bias[nodeNumberInCurrentLayer]) {
+                    in[nodeNumberInCurrentLayer] = 0.0;
+                    for (int nri = 0; nri < netz[layer - 1].length; nri++) {
+                        int nodeNumberInPreviousLayer = netz[layer - 1][nri];
+                        in[nodeNumberInCurrentLayer] += w[nodeNumberInPreviousLayer][nodeNumberInCurrentLayer] * a[nodeNumberInPreviousLayer];
+                    }
+                    a[nodeNumberInCurrentLayer] = aktivierungsFunktion(in[nodeNumberInCurrentLayer]);
+                }
+            }
         }
     }
 
+    /**
+     * Calculates the backwards path and updates it directly
+     *
+     * @param klasse Whether it is a 0 or 1 in this classification
+     */
     private void backward(double klasse) {
-        deltaAusgabeSchicht(klasse);
+        deltaOutputLayer(klasse);
+        deltaHiddenLayers();
+        updateWeights();
+    }
 
+    /**
+     * backward-Pass
+     *
+     * delta = error
+     */
+    private void deltaOutputLayer(double klasse) {
+        int outputLayer = netz.length - 1;
+        for (int nrj = 0; nrj < netz[outputLayer].length; nrj++) {
+            int outputNodeNumber = netz[outputLayer][nrj];
+            final var error = a[outputNodeNumber] - klasse;
+            delta[outputNodeNumber] = ableitungAktivierungsFunktion(in[outputNodeNumber]) * error;
+        }
+    }
+
+    private void deltaHiddenLayers() {
         int ausgabeSchicht = netz.length - 1;
 
         for (int l = ausgabeSchicht - 1; l >= 0; l--) {
@@ -262,7 +305,9 @@ public class KNN {
                 }
             }
         }
+    }
 
+    private void updateWeights() {
         for (int l = 0; l < netz.length - 1; l++) {
             for (int nri = 0; nri < netz[l].length; nri++) {
                 int i = netz[l][nri];
@@ -270,42 +315,18 @@ public class KNN {
                 for (int nrj = 0; nrj < netz[l + 1].length; nrj++) {
                     int j = netz[l + 1][nrj];
                     if (!bias[j]) {
-                        double delt = alpha * a[i] * delta[j];
-                        //w[i][j] += delt;
-                        w[i][j] = w[i][j] - delt;//Gradientenabstieg
+                        final var gradient = a[i] * delta[j];
+                        double delt = alpha * gradient;
+                        w[i][j] -= delt;//Gradientenabstieg
                     }
                 }
             }
         }
     }
 
-    /*
-     * Forward-Pass
-     */
-    private void forward() {
-        // hier die Übungsaufgabe auszuführen :-)
-        for (int l = 1; l < netz.length; l++) {// alle Schichten l ab erster Hiddenschicht
-            for (int nrj = 0; nrj < netz[l].length; nrj++) {// alle Knoten in Schicht l
-                int j = netz[l][nrj];// knotennummer
-                if (!bias[j]) {
-                    in[j] = 0.0;
-                    for (int nri = 0; nri < netz[l - 1].length; nri++) {// alle Knoten in Schicht l-1
-                        int i = netz[l - 1][nri];// knotennummer
-                        in[j] += w[i][j] * a[i];
-                    }
-                    a[j] = aktivierungsFunktion(in[j]);
-                }
-            }
-        }
-    }
-
-
-
-
-    /*
+    /**
      * Aktivierungsfunktion und deren Ableitung
      */
-
     private double aktivierungsFunktion(double x) {
         return (1.0 / (1.0 + Math.exp(-x)));
     }
@@ -325,7 +346,7 @@ public class KNN {
 //	}
 //	
 
-    /*
+    /**
      * Initialisierung
      */
     private void gewichteInitialisieren() {
@@ -350,6 +371,11 @@ public class KNN {
         }
     }
 
+    /**
+     * Initialize all bias node
+     *
+     * @param input
+     */
     private void eingabeSchichtInitialisieren(double[] input) {
         // Alle Bias-Knoten initialisieren
         for (int i = 0; i < netz.length - 1; i++) {// über alle Schichten
@@ -360,16 +386,16 @@ public class KNN {
             a[knoten] = 1.0;
         }
 
-        // Alle Knoten der Eingabeschicht ab dem 2. Knoten mit Eingabe belegen (1.
-        // Knoten ist ja Bias!)
-        for (int i = 0; i < input.length - 1; i++) {// der letzte Wert in input ist der output und gehört nicht zur
-            // Eingabe
-            in[i + 1] = input[i]; // in[0] ist Bias, deshalb i.ten Input bei bei in[i+1] speichern
+        // Alle Knoten der Eingabeschicht ab dem 2. Knoten mit Eingabe belegen (1. Knoten ist ja Bias!)
+        // der letzte Wert in input ist der output und gehört nicht zur Eingabe, deshalb input.length -1
+        for (int i = 0; i < input.length - 1; i++) {
+            // in[0] ist Bias, deshalb i.ten Input bei bei in[i+1] speichern
+            in[i + 1] = input[i];
             a[i + 1] = input[i];
         }
     }
 
-    /*
+    /**
      * Hilfsmethoden zur Evaluation
      */
     private int fehler(double[][] liste) {
@@ -413,7 +439,7 @@ public class KNN {
         return fehler;
     }
 
-    /*
+    /**
      * Methoden zur Evaluierung
      */
     public double[] evaluieren(double[][] liste) {
@@ -483,14 +509,13 @@ public class KNN {
         return ergebnis;
     }
 
+    /**
+     * für GUI_Beispiele
+     * zeigt grafisch den output des NN fuer alle Punkte (x1, x2) im angegebenen Intervall
+     * zeigt die angegenben Daten zum Vergleich ebenfalls an
+     * die Ausgabe wurde von einem Studenten entwickelt!
+     */
     public void evaluierenGUIII(double[][] daten) {
-        /*
-         * für GUI_Beispiele
-         * zeigt grafisch den output des NN fuer alle Punkte (x1, x2) im angegebenen Intervall
-         * zeigt die angegenben Daten zum Vergleich ebenfalls an
-         * die Ausgabe wurde von einem Studenten entwickelt!
-         */
-
         int z = 0;
         for (int i = 0; i < 100; i++) {
             for (int j = 0; j < 100; j++) {
@@ -583,7 +608,7 @@ public class KNN {
 ////			this.ausgabeW();
 //		}
 
-    /*
+    /**
      * Methoden zur  Ausgabe der Netzparameter
      */
     public void ausgabeBias() {
