@@ -85,7 +85,7 @@ public class KNN {
      *
      * @param liste Muster
      */
-    public void trainieren(double[][] liste) {
+    public void trainieren(double[][] liste, boolean print) {
         double[] fehlerVektor;
 
         double klasse;
@@ -114,7 +114,9 @@ public class KNN {
             fehler = fehlerVektor[0];
             anzFehler = (int) fehlerVektor[1];
 
-            System.out.println("-Epoche: " + epoche + " " + anzFehler + " " + fehler + " minAnzFehler " + minAnzFehler + " minFehler " + minFehler + " " + goBack + " " + alpha);
+            if (print) {
+                System.out.println("-Epoche: " + epoche + " " + anzFehler + " " + fehler + " minAnzFehler " + minAnzFehler + " minFehler " + minFehler + " " + goBack + " " + alpha);
+            }
             if (epoche >= maxEpoche || anzFehler == 0) stop = true;
         }
     }
@@ -361,20 +363,6 @@ public class KNN {
         ergebnis[10] = (double) richtigPositiv / (double) (richtigPositiv + falschNegativ);
         ergebnis[11] = (double) falschPositiv / (double) (richtigNegativ + falschPositiv);
 
-        System.out.println("Anzahl Muster:  \t" + ergebnis[0]);
-        System.out.println("Anzahl Positiv: \t" + ergebnis[1]);
-        System.out.println("Anzahl Negativ: \t" + ergebnis[2]);
-        System.out.println("Anteil Positiv: \t" + ergebnis[3]);
-        System.out.println("Anteil Negativ: \t" + ergebnis[4]);
-
-        System.out.println("Genauigkeit  :  \t" + ergebnis[5]);
-        System.out.println("Trefferquote:   \t" + ergebnis[10]);
-        System.out.println("Ausfallrate :   \t" + ergebnis[11]);
-
-        System.out.println("richtigPositiv: \t" + ergebnis[6]);
-        System.out.println("falsch Negativ: \t" + ergebnis[9]);
-        System.out.println("richtigNegativ: \t" + ergebnis[8]);
-        System.out.println("falsch Positiv: \t" + ergebnis[7]);
         return ergebnis;
     }
 

@@ -60,7 +60,7 @@ public class Einlesen {
         return koord;
     }
 
-    public static double[][] einlesenDiabetes(File file, boolean train) {
+    public static double[][] einlesenDiabetes(File file, boolean train, boolean print) {
         double[][] koord = null;
         int dim = 0;
         int dimTrain = 0;
@@ -82,8 +82,12 @@ public class Einlesen {
             dimTrain = (int) (dim * prozent);
             dimEvalu = dim - dimTrain;
 
-            if (train) System.out.println("Anzahl Samples Original: " + dim + " Anzahl Samples Auswahl: " + dimTrain);
-            else System.out.println("Anzahl Samples Original: " + dim + " Anzahl Samples Auswahl: " + dimEvalu);
+            if (print) {
+                if (train)
+                    System.out.println("Anzahl Samples Original: " + dim + " Anzahl Samples Auswahl: " + dimTrain);
+                else System.out.println("Anzahl Samples Original: " + dim + " Anzahl Samples Auswahl: " + dimEvalu);
+            }
+
             scanner.close();
 
             //Zeilen einlesen
