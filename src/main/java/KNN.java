@@ -18,7 +18,7 @@ public class KNN {
     /**
      * Fehlerrate für Backprobagation. Gewichtung des Gradienten
      */
-    private double alpha = 0.5;
+    private double alpha;
     /**
      * Anzahl Iterationen bei Fehlerminimierung
      */
@@ -26,7 +26,7 @@ public class KNN {
     /**
      * Anzahl Iterationen bei Fehlerminimierung
      */
-    private int maxEpoche = 10;
+    private int maxEpoche;
 
 
     /**
@@ -34,7 +34,9 @@ public class KNN {
      * @param anzahlKnotenProHiddenSchicht The length of array describes number of hidden layers.
      *                                     Each value describes how many nodes are in the respective layer
      */
-    public KNN(int anzahlEingabewerte, int[] anzahlKnotenProHiddenSchicht) {
+    public KNN(int anzahlEingabewerte, int[] anzahlKnotenProHiddenSchicht, double alpha, int maxEpoche) {
+        this.alpha = alpha;
+        this.maxEpoche = maxEpoche;
 
         this.m = anzahlKnotenProHiddenSchicht.length + 2;// Anzahl Hiddenschichte + Eingabeschicht + Ausgabeschicht
         netz = new int[m][];
