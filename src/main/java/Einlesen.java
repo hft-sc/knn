@@ -16,7 +16,7 @@ public class Einlesen {
         }
     }
 
-    public static double[][] einlesenBankdaten(File file) {
+    public static double[][] einlesenBankdaten(File file, boolean print) {
         double[][] koord = null;
         int dim = 0;
         try {
@@ -28,7 +28,7 @@ public class Einlesen {
                 dim++;
             }
             dim = dim - 1;//erste Zeile ist hier dummy
-            System.out.println("Anzahl Samples: " + dim);
+            if (print) System.out.println("Anzahl Samples: " + dim);
             scanner.close();
 
             //Zeilen einlesen
