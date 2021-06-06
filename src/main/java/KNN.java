@@ -1,24 +1,18 @@
 public class KNN {
     // Feedforward-Neuronales Netz variabler Anzahl an Hiddenschichten
 
-    public int[][] netz;        // Enthaelt pro Schicht netz[i] die enthaltenen Knotennummern
-    public double[][] w;        // Gewichte
-    // Knoteninformationen, jeweils durch ein Array gespeichert, Index =
-    // Knotennummer
-    public boolean[] bias; // true: Knoten ist Bias
     private final int m;                // Anzahl Schichten
     private final int n;                // Anzahl Knoten (insgesamt ueber alle Schichten)
     private final double[] in;
     private final double[] a;
     private final double[] delta;
-
     private final int batchSize = 1000;
     private final double[][] gradient;
-
     /**
      * Fehlerrate für Backprobagation. Gewichtung des Gradienten
      */
-    private final double alpha;
+    private final double maxAlpha;
+    private final double minAlpha;
     /**
      * Anzahl Iterationen bei Fehlerminimierung
      */
@@ -27,6 +21,12 @@ public class KNN {
      * Anzahl Iterationen bei Fehlerminimierung
      */
     private final int maxEpoche;
+    public int[][] netz;        // Enthaelt pro Schicht netz[i] die enthaltenen Knotennummern
+    public double[][] w;        // Gewichte
+    // Knoteninformationen, jeweils durch ein Array gespeichert, Index =
+    // Knotennummer
+    public boolean[] bias; // true: Knoten ist Bias
+    private double currentAlpha;
 
 
     /**
@@ -34,8 +34,10 @@ public class KNN {
      * @param anzahlKnotenProHiddenSchicht The length of array describes number of hidden layers.
      *                                     Each value describes how many nodes are in the respective layer
      */
-    public KNN(int anzahlEingabewerte, int[] anzahlKnotenProHiddenSchicht, double alpha, int maxEpoche) {
-        this.alpha = alpha;
+    public KNN(int anzahlEingabewerte, int[] anzahlKnotenProHiddenSchicht, double maxAlpha, double minAlpha, int maxEpoche) {
+        this.maxAlpha = maxAlpha;
+        this.minAlpha = minAlpha;
+        this.currentAlpha = maxAlpha;
         this.maxEpoche = maxEpoche;
 
         this.m = anzahlKnotenProHiddenSchicht.length + 2;// Anzahl Hiddenschichte + Eingabeschicht + Ausgabeschicht
@@ -102,6 +104,7 @@ public class KNN {
 
         while (!stop) {
             epoche++;
+            updateAlpha();
 
             for (double[] doubles : liste) {
                 eingabeSchichtInitialisieren(doubles);
@@ -115,10 +118,20 @@ public class KNN {
             anzFehler = (int) fehlerVektor[1];
 
             if (print) {
-                System.out.println("-Epoche: " + epoche + " " + anzFehler + " " + fehler + " minAnzFehler " + minAnzFehler + " minFehler " + minFehler + " " + goBack + " " + alpha);
+                System.out.println("-Epoche: " + epoche + " " + anzFehler + " " + fehler + " minAnzFehler " + minAnzFehler + " minFehler " + minFehler + " " + goBack + " " + maxAlpha);
             }
             if (epoche >= maxEpoche || anzFehler == 0) stop = true;
         }
+    }
+
+    /**
+     * Reduce alpha. High alpha for early epoch, low alpha for later epoch.
+     * <p>
+     * Currently reduces linearly.
+     */
+    private void updateAlpha() {
+        currentAlpha -= (maxAlpha - minAlpha) / (maxEpoche);
+//        System.out.println(currentAlpha);
     }
 
     /**
@@ -194,7 +207,7 @@ public class KNN {
                     int j = netz[l + 1][nrj];
                     if (!bias[j]) {
                         final var gradient = a[i] * delta[j];
-                        double delt = alpha * gradient;
+                        double delt = currentAlpha * gradient;
                         w[i][j] -= delt;//Gradientenabstieg
                     }
                 }
