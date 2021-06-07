@@ -13,9 +13,9 @@ public class Hauptprogramm {
         //Einlesen.auslesen(daten);
 
         int[] strukturNN = {5};//anzahl Knoten (incl. Bias) pro Hiddenschicht
-        KNN netz = new KNN(dimension, strukturNN, 0.5, 0.5, 10);
-
-        netz.trainieren(daten, true);//Verlustfunktion min
+//        KNN netz = new KNN(dimension, strukturNN, 0.5, 0.5, 10);
+//
+//        netz.trainieren(daten, true);//Verlustfunktion min
         //netz.trainierenStochastisch(daten);
         //netz.trainierenMiniBatch(daten);
         //netz.trainierenBatch(daten);
@@ -28,6 +28,6 @@ public class Hauptprogramm {
 //        Utils.printResult(result);
 
 
-        netz.evaluierenGUIII(daten);
+//        netz.evaluierenGUIII(daten);
     }
 }

@@ -1,3 +1,7 @@
+import alpha.AlphaModifier;
+import alpha.ExpAlphaModifier;
+import alpha.LinearAlphaModifier;
+
 public class KNN {
     // Feedforward-Neuronales Netz variabler Anzahl an Hiddenschichten
 
@@ -27,20 +31,27 @@ public class KNN {
     // Knotennummer
     public boolean[] bias; // true: Knoten ist Bias
     private double currentAlpha;
+    private AlphaModifier alphaModifier;
 
 
     /**
      * @param anzahlEingabewerte
-     * @param anzahlKnotenProHiddenSchicht The length of array describes number of hidden layers.
-     *                                     Each value describes how many nodes are in the respective layer
      */
-    public KNN(int anzahlEingabewerte, int[] anzahlKnotenProHiddenSchicht, double maxAlpha, double minAlpha, int maxEpoche) {
-        this.maxAlpha = maxAlpha;
-        this.minAlpha = minAlpha;
+    public KNN(int anzahlEingabewerte, TestParameters testParameters) {
+        this.maxAlpha = testParameters.getMaxAlpha();
+        this.minAlpha = testParameters.getMinAlpha();
         this.currentAlpha = maxAlpha;
-        this.maxEpoche = maxEpoche;
+        this.maxEpoche = testParameters.getMaxEpoch();
+        switch (testParameters.getAlphaModifierType()) {
+            case EXP:
+                alphaModifier = new ExpAlphaModifier(maxEpoche, maxAlpha, minAlpha);
+                break;
+            case LINEAR:
+                alphaModifier = new LinearAlphaModifier(maxEpoche, maxAlpha, minAlpha);
+                break;
+        }
 
-        this.m = anzahlKnotenProHiddenSchicht.length + 2;// Anzahl Hiddenschichte + Eingabeschicht + Ausgabeschicht
+        this.m = testParameters.getLayers().length + 2;// Anzahl Hiddenschichte + Eingabeschicht + Ausgabeschicht
         netz = new int[m][];
         int knotenNr = 0;
 
@@ -53,8 +64,8 @@ public class KNN {
         netz[m - 1] = new int[1];
 
         // Hiddenschichten
-        for (int l = 0; l < anzahlKnotenProHiddenSchicht.length; l++) {
-            netz[l + 1] = new int[anzahlKnotenProHiddenSchicht[l]];
+        for (int l = 0; l < testParameters.getLayers().length; l++) {
+            netz[l + 1] = new int[testParameters.getLayers()[l]];
         }
 
         // alle Schichten werden mit fortlaufenden Knotennummern gefüllt
@@ -100,11 +111,11 @@ public class KNN {
         double minFehler = Double.MAX_VALUE;
         boolean goBack = false;
         boolean stop = false;
-        int epoche = 0;
+        int epoche = 1;
 
         while (!stop) {
             epoche++;
-            updateAlpha();
+            updateAlpha(epoche);
 
             for (double[] doubles : liste) {
                 eingabeSchichtInitialisieren(doubles);
@@ -120,18 +131,15 @@ public class KNN {
             if (print) {
                 System.out.println("-Epoche: " + epoche + " " + anzFehler + " " + fehler + " minAnzFehler " + minAnzFehler + " minFehler " + minFehler + " " + goBack + " " + maxAlpha);
             }
-            if (epoche >= maxEpoche || anzFehler == 0) stop = true;
+            if (epoche >= maxEpoche + 1 || anzFehler == 0) stop = true;
         }
     }
 
     /**
      * Reduce alpha. High alpha for early epoch, low alpha for later epoch.
-     * <p>
-     * Currently reduces linearly.
      */
-    private void updateAlpha() {
-        currentAlpha -= (maxAlpha - minAlpha) / (maxEpoche);
-//        System.out.println(currentAlpha);
+    private void updateAlpha(int currentEpoch) {
+        currentAlpha = alphaModifier.modify(currentEpoch, currentAlpha);
     }
 
     /**

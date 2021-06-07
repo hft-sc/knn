@@ -20,7 +20,7 @@ public class Utils {
     public static void printResult(TestParameters parameters, double[] result) {
         var sb = new StringBuilder();
 
-        sb.append(String.format("%50s", parameters.toString())).append('\t');
+        sb.append(String.format("%80s", parameters.toString())).append('\t');
         sb.append("Genauigkeit:").append(String.format(Locale.ENGLISH, "%,.4f", result[5])).append('\t');
         sb.append("Trefferquote:").append(String.format(Locale.ENGLISH, "%,.4f", result[10])).append('\t');
         sb.append("Ausfallrate:").append(String.format(Locale.ENGLISH, "%,.4f", result[11])).append('\t');
