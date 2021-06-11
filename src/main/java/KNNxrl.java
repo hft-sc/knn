@@ -1,12 +1,17 @@
-
 public class KNNxrl implements KNN {
     // Feedforward-Neuronales Netz variabler Anzahl an Hiddenschichten
 
+    /**
+     * Describes the weight between to nodes
+     * First dimension is layer
+     * second dimension is input node index in layer
+     * third dimension is output node index in layer + 1
+     */
+    public final double[][][] weight;
+    private final double[][] delta;
+    private final double[][] input;
+    private final double[][] output;
     private final int layerCount;
-    private final int nodeCount;
-    private final double[] input;
-    private final double[] output;
-    private final double[] delta;
     private final double maxAlpha;
     private final double minAlpha;
     private final int maxEpoch;
@@ -14,58 +19,60 @@ public class KNNxrl implements KNN {
      * Network of all nodes, containing their node numbers
      * First dimension are the layers
      * Second dimension are the nodes in the layer
+     * <p>
+     * For each layer, except the last one, the first node is the bias
      */
     public int[][] network;
-    public double[][] weight;
-    /**
-     * Whether a numbered node is a bias
-     */
-    public boolean[] bias; // true: Knoten ist Bias
     private double currentAlpha;
 
-    public KNNxrl(int dataSize, TestParameters testParameters) {
-        this.maxAlpha = testParameters.getMaxAlpha();
-        this.minAlpha = testParameters.getMinAlpha();
-        this.currentAlpha = maxAlpha;
-        this.maxEpoch = testParameters.getMaxEpoche();
+    public KNNxrl(int dimensions, TestParameters testParameters) {
+        maxAlpha = testParameters.getMaxAlpha();
+        minAlpha = testParameters.getMinAlpha();
+        currentAlpha = maxAlpha;
+        maxEpoch = testParameters.getMaxEpoche();
 
-        this.layerCount = testParameters.getLayers().length + 2;// Anzahl Hiddenschichte + Eingabeschicht + Ausgabeschicht
+        final var layers = testParameters.getLayers();
+        layerCount = layers.length + 2;// Anzahl Hiddenschichte + Eingabeschicht + Ausgabeschicht
         network = new int[layerCount][];
-        int knotenNr = 0;
+        delta = new double[layerCount][];
+        input = new double[layerCount][];
+        output = new double[layerCount][];
 
         // Eingabeschicht
         // der erste Knoten der ersten Schicht ist ein Bias, deshalb plus 1
-        network[0] = new int[dataSize + 1];
+        network[0] = new int[dimensions + 1];
+        delta[0] = new double[dimensions + 1];
+        input[0] = new double[dimensions + 1];
+        output[0] = new double[dimensions + 1];
 
         // Ausgabeschicht
         // es gibt einen Ausgabeknoten, da ein Klassifikationsproblem vorliegt
         network[layerCount - 1] = new int[1];
+        delta[layerCount - 1] = new double[1];
+        input[layerCount - 1] = new double[1];
+        output[layerCount - 1] = new double[1];
 
         // Hiddenschichten
-        for (int l = 0; l < testParameters.getLayers().length; l++) {
-            network[l + 1] = new int[testParameters.getLayers()[l]];
+        for (int layer = 1; layer <= layers.length; layer++) {
+            final var nodeInLayer = layers[layer - 1];
+            network[layer] = new int[nodeInLayer];
+            delta[layer] = new double[nodeInLayer];
+            input[layer] = new double[nodeInLayer];
+            output[layer] = new double[nodeInLayer];
         }
 
-        // alle Schichten werden mit fortlaufenden Knotennummern gefüllt
-        for (int l = 0; l < layerCount; l++) {
-            for (int i = 0; i < network[l].length; i++) {
-                network[l][i] = knotenNr;
-                knotenNr++;
-            }
+        weight = new double[layerCount - 1][][];
+        weight[0] = new double[dimensions + 1][];
+        for (int inputNode = 0; inputNode < weight[0].length; inputNode++) {
+            weight[0][inputNode] = new double[layers[0]];
         }
 
-        this.nodeCount = knotenNr;
-        this.weight = new double[this.nodeCount][this.nodeCount];
-        this.bias = new boolean[this.nodeCount];
-        this.input = new double[this.nodeCount];
-        this.output = new double[this.nodeCount];
-        this.delta = new double[this.nodeCount];
-
-        for (int l = 0; l < layerCount; l++) {
-            for (int i = 0; i < network[l].length; i++) {
-                knotenNr = network[l][i];
-                // der erste Knoten einer Schicht wird bias (aussnahme in der ausgabeschicht)
-                bias[knotenNr] = i == 0 && l < layerCount - 1;
+        for (int hiddenLayer = 0; hiddenLayer < layers.length; hiddenLayer++) {
+            final var nodeCount = layers[hiddenLayer];
+            weight[hiddenLayer + 1] = new double[nodeCount][];
+            for (int inputNode = 0; inputNode < nodeCount; inputNode++) {
+                var nextLayerNodeCount = layers[hiddenLayer];
+                weight[hiddenLayer + 1][inputNode] = new double[nextLayerNodeCount];
             }
         }
     }
@@ -92,7 +99,7 @@ public class KNNxrl implements KNN {
 
 
             for (double[] doubles : liste) {
-                eingabeSchichtInitialisieren(doubles);
+                initInputLayer(doubles);
                 klasse = doubles[doubles.length - 1]; // 0 or 1. Because its a classification problem
                 forward();
                 backward(klasse);
@@ -114,17 +121,16 @@ public class KNNxrl implements KNN {
      */
     private void forward() {
         // Skip bias layer, so int layer = 1
-        for (int layer = 1; layer < network.length; layer++) {
-            for (int nodeNumber = 0; nodeNumber < network[layer].length; nodeNumber++) {
-                int nodeNumberInCurrentLayer = network[layer][nodeNumber];
-                if (!bias[nodeNumberInCurrentLayer]) {
-                    input[nodeNumberInCurrentLayer] = 0.0;
-                    for (int nri = 0; nri < network[layer - 1].length; nri++) {
-                        int nodeNumberInPreviousLayer = network[layer - 1][nri];
-                        input[nodeNumberInCurrentLayer] += weight[nodeNumberInPreviousLayer][nodeNumberInCurrentLayer] * output[nodeNumberInPreviousLayer];
-                    }
-                    output[nodeNumberInCurrentLayer] = aktivierungsFunktion(input[nodeNumberInCurrentLayer]);
+        for (int layer = 1; layer < input.length; layer++) {
+            // Skip bias node, so nodeNumber = 1
+            for (int nodeNumber = 1; nodeNumber < input[layer].length; nodeNumber++) {
+                input[layer][nodeNumber] = 0.0;
+                final var previousLayer = layer - 1;
+                for (int previousLayerNodeNumber = 0; previousLayerNodeNumber < input[previousLayer].length; previousLayerNodeNumber++) {
+                    int nodeNumberInPreviousLayer = network[previousLayer][previousLayerNodeNumber];
+                    input[layer][nodeNumber] += weight[layer][nodeNumberInPreviousLayer][nodeNumber] * output[previousLayer][nodeNumberInPreviousLayer];
                 }
+                output[layer][nodeNumber] = aktivierungsFunktion(input[layer][nodeNumber]);
             }
         }
     }
@@ -147,44 +153,35 @@ public class KNNxrl implements KNN {
      */
     private void deltaOutputLayer(double klasse) {
         int outputLayer = network.length - 1;
-        for (int nrj = 0; nrj < network[outputLayer].length; nrj++) {
-            int outputNodeNumber = network[outputLayer][nrj];
-            final var error = output[outputNodeNumber] - klasse;
-            delta[outputNodeNumber] = ableitungAktivierungsFunktion(input[outputNodeNumber]) * error;
+        for (int nodeNumber = 0; nodeNumber < output[outputLayer].length; nodeNumber++) {
+            final var error = output[outputLayer][nodeNumber] - klasse;
+            delta[outputLayer][nodeNumber] = ableitungAktivierungsFunktion(input[outputLayer][nodeNumber]) * error;
         }
     }
 
     private void deltaHiddenLayers() {
-        int ausgabeSchicht = network.length - 1;
-
-        for (int l = ausgabeSchicht - 1; l >= 0; l--) {
-            for (int nri = 0; nri < network[l].length; nri++) {
-                int i = network[l][nri];
-                delta[i] = 0.0;
-                if (!bias[i]) {
-                    double sum = 0;
-                    for (int nrj = 0; nrj < network[l + 1].length; nrj++) {
-                        int j = network[l + 1][nrj];
-                        sum += weight[i][j] * delta[j];
-                    }
-                    delta[i] = ableitungAktivierungsFunktion(input[i]) * sum;
+        int outputLayer = network.length - 1;
+        for (int layer = outputLayer - 1; layer >= 0; layer--) {
+            for (int nodeNumber = 1; nodeNumber < network[layer].length; nodeNumber++) {
+                double sum = 0;
+                for (int nodeNumberNextLayer = 0; nodeNumberNextLayer < network[layer + 1].length; nodeNumberNextLayer++) {
+                    sum += weight[layer][nodeNumber][nodeNumberNextLayer] * delta[layer + 1][nodeNumberNextLayer];
                 }
+                delta[layer][nodeNumber] = ableitungAktivierungsFunktion(input[layer][nodeNumber]) * sum;
             }
         }
     }
 
     private void updateWeights() {
-        for (int l = 0; l < network.length - 1; l++) {
-            for (int nri = 0; nri < network[l].length; nri++) {
-                int i = network[l][nri];
+        for (int layer = 0; layer < network.length - 1; layer++) {
+            for (int nodeNumber = 0; nodeNumber < network[layer].length; nodeNumber++) {
+                for (int nodeNumberNextLayer = 0; nodeNumberNextLayer < network[layer + 1].length; nodeNumberNextLayer++) {
+//                    final var gradient = output[layer][nodeNumber] * delta[layer + 1][nodeNumberNextLayer];
+//                    final double delta = currentAlpha * gradient;
 
-                for (int nrj = 0; nrj < network[l + 1].length; nrj++) {
-                    int j = network[l + 1][nrj];
-                    if (!bias[j]) {
-                        final var gradient = output[i] * delta[j];
-                        double delt = currentAlpha * gradient;
-                        weight[i][j] -= delt;//Gradientenabstieg
-                    }
+                    //Gradientenabstieg
+                    weight[layer][nodeNumber][nodeNumberNextLayer] -= currentAlpha * output[layer][nodeNumber]
+                            * delta[layer + 1][nodeNumberNextLayer];
                 }
             }
         }
@@ -198,7 +195,8 @@ public class KNNxrl implements KNN {
     }
 
     private double ableitungAktivierungsFunktion(double x) {
-        return (aktivierungsFunktion(x) * (1 - aktivierungsFunktion(x)));
+        final var value = aktivierungsFunktion(x);
+        return (value * (1 - value));
     }
 
     /**
@@ -206,15 +204,10 @@ public class KNNxrl implements KNN {
      */
     private void initWeights() {
         for (int layer = 0; layer < layerCount - 1; layer++) {
-            for (int startNodeIndex = 0; startNodeIndex < network[layer].length; startNodeIndex++) {
-                int startNode = network[layer][startNodeIndex];
-                for (int j = 0; j < network[layer + 1].length; j++) {
-                    int endNode = network[layer + 1][j];
-                    if (!bias[endNode]) {
-                        weight[startNode][endNode] = Math.random();
-                        if (Math.random() < 0.5)
-                            weight[startNode][endNode] = -weight[startNode][endNode];
-                    }
+            for (int nodeNumber = 0; nodeNumber < network[layer].length; nodeNumber++) {
+                for (int nodeNumberNextLayer = 0; nodeNumberNextLayer < network[layer + 1].length; nodeNumberNextLayer++) {
+                    // random number between -1 and 1
+                    weight[layer][nodeNumber][nodeNumberNextLayer] = Math.random() * 2 - 1;
                 }
             }
         }
@@ -225,53 +218,21 @@ public class KNNxrl implements KNN {
      *
      * @param input
      */
-    private void eingabeSchichtInitialisieren(double[] input) {
-        // Alle Bias-Knoten initialisieren
-        for (int i = 0; i < network.length - 1; i++) {// über alle Schichten
-            int knoten = network[i][0]; // der erste Knoten einer Schicht ist Bias!
-            if (!bias[knoten])
-                System.out.println("ups, nicht-Bias-Knoten als bias initialisiert");
-            this.input[knoten] = 1.0;
-            output[knoten] = 1.0;
+    private void initInputLayer(double[] input) {
+        // Init bias nodes. First node of each layer is bias
+        for (int layer = 0; layer < network.length - 1; layer++) {
+            this.input[layer][0] = 1.0;
+            output[layer][0] = 1.0;
         }
 
         // Alle Knoten der Eingabeschicht ab dem 2. Knoten mit Eingabe belegen (1. Knoten ist ja Bias!)
         // der letzte Wert in input ist der output und gehört nicht zur Eingabe, deshalb input.length -1
-        for (int i = 0; i < input.length - 1; i++) {
-            // in[0] ist Bias, deshalb i.ten Input bei bei in[i+1] speichern
-            this.input[i + 1] = input[i];
-            output[i + 1] = input[i];
+        for (int nodeNumber = 0; nodeNumber < input.length - 1; nodeNumber++) {
+            this.input[0][nodeNumber + 1] = input[nodeNumber];
+            output[0][nodeNumber + 1] = input[nodeNumber];
         }
     }
 
-    /**
-     * Hilfsmethoden zur Evaluation
-     */
-    private int fehler(double[][] liste) {
-        int anzFehler = 0;
-        double klasse;
-        for (int s = 0; s < liste.length; s++) {
-            eingabeSchichtInitialisieren(liste[s]);
-            klasse = liste[s][liste[s].length - 1];
-            forward();
-            if ((output[nodeCount - 1] < 0.5 && (int) klasse == 1) || (output[nodeCount - 1] >= 0.5 && (int) klasse == 0))
-                anzFehler++;
-            //System.out.println(s + " " + liste[s][0] + " " + liste[s][1] + " " + liste[s][2] + " " + a[n-1]);
-        }
-        return anzFehler;
-    }
-
-    private double fehler2(double[][] liste) {
-        double fehler = 0.;
-        double klasse;
-        for (int s = 0; s < liste.length; s++) {
-            eingabeSchichtInitialisieren(liste[s]);
-            klasse = liste[s][liste[s].length - 1];
-            forward();
-            fehler += Math.pow(klasse - output[nodeCount - 1], 2);
-        }
-        return fehler;
-    }
 
     /**
      * @return An array with 2 values. First one is the sum of the difference of predicted and actual value.
@@ -282,11 +243,12 @@ public class KNNxrl implements KNN {
 
         double klasse;
         for (double[] doubles : liste) {
-            eingabeSchichtInitialisieren(doubles);
+            initInputLayer(doubles);
             klasse = doubles[doubles.length - 1];
             forward();
-            fehler[0] += Math.pow(klasse - output[nodeCount - 1], 2);
-            if ((output[nodeCount - 1] < 0.5 && (int) klasse == 1) || (output[nodeCount - 1] >= 0.5 && (int) klasse == 0)) {
+            final var lastOutput = getLastOutputNodeInLastLayer();
+            fehler[0] += Math.pow(klasse - lastOutput, 2);
+            if ((lastOutput < 0.5 && (int) klasse == 1) || (lastOutput >= 0.5 && (int) klasse == 0)) {
                 fehler[1]++;
             }
         }
@@ -307,19 +269,20 @@ public class KNNxrl implements KNN {
         double[] ergebnis = new double[12];
 
         for (int s = 0; s < liste.length; s++) {
-            eingabeSchichtInitialisieren(liste[s]);
+            initInputLayer(liste[s]);
             output = liste[s][liste[s].length - 1];
             forward();
-            if (this.output[nodeCount - 1] < 0.5 && (int) output == 1) {
+            final var lastOutput = getLastOutputNodeInLastLayer();
+            if (lastOutput < 0.5 && (int) output == 1) {
                 falschNegativ++;
                 anzahlPositiv++;
-            } else if (this.output[nodeCount - 1] >= 0.5 && (int) output == 1) {
+            } else if (lastOutput >= 0.5 && (int) output == 1) {
                 richtigPositiv++;
                 anzahlPositiv++;
-            } else if (this.output[nodeCount - 1] >= 0.5 && (int) output == 0) {
+            } else if (lastOutput >= 0.5 && (int) output == 0) {
                 falschPositiv++;
                 anzahlNegativ++;
-            } else if (this.output[nodeCount - 1] < 0.5 && (int) output == 0) {
+            } else if (lastOutput < 0.5 && (int) output == 0) {
                 richtigNegativ++;
                 anzahlNegativ++;
             } else {
@@ -349,75 +312,78 @@ public class KNNxrl implements KNN {
 
     @Override
     public void evaluierenGUIII(double[][] daten) {
-        int z = 0;
-        for (int i = 0; i < 100; i++) {
-            for (int j = 0; j < 100; j++) {
-                for (int k = 0; k < 10; k++) {
-                    double wert1 = (double) i + (double) k / 10;
-                    double wert2 = (double) j + (double) k / 10;
-                    double[] werte = {wert1, wert2};
-                    int erg = output(werte);
-                    if (erg == 0) z++;
-                }
-            }
-        }
-        double[][] GUIwerteFlaeche = new double[z][2];
-        z = 0;
-        for (int i = 0; i < 100; i++) {
-            for (int j = 0; j < 100; j++) {
-                for (int k = 0; k < 10; k++) {
-                    double wert1 = (double) i + (double) k / 10;
-                    double wert2 = (double) j + (double) k / 10;
-                    double[] werte = {wert1, wert2};
-                    int erg = output(werte);
-                    if (erg == 0) {
-                        GUIwerteFlaeche[z][0] = wert1;
-                        GUIwerteFlaeche[z][1] = wert2;
-                        z++;
-                    }
-                }
-            }
-        }
-        GUI.zeichnen(daten, GUIwerteFlaeche);
+        throw new UnsupportedOperationException();
+//        int z = 0;
+//        for (int i = 0; i < 100; i++) {
+//            for (int j = 0; j < 100; j++) {
+//                for (int k = 0; k < 10; k++) {
+//                    double wert1 = (double) i + (double) k / 10;
+//                    double wert2 = (double) j + (double) k / 10;
+//                    double[] werte = {wert1, wert2};
+//                    int erg = output(werte);
+//                    if (erg == 0) z++;
+//                }
+//            }
+//        }
+//        double[][] GUIwerteFlaeche = new double[z][2];
+//        z = 0;
+//        for (int i = 0; i < 100; i++) {
+//            for (int j = 0; j < 100; j++) {
+//                for (int k = 0; k < 10; k++) {
+//                    double wert1 = (double) i + (double) k / 10;
+//                    double wert2 = (double) j + (double) k / 10;
+//                    double[] werte = {wert1, wert2};
+//                    int erg = output(werte);
+//                    if (erg == 0) {
+//                        GUIwerteFlaeche[z][0] = wert1;
+//                        GUIwerteFlaeche[z][1] = wert2;
+//                        z++;
+//                    }
+//                }
+//            }
+//        }
+//        GUI.zeichnen(daten, GUIwerteFlaeche);
     }
 
     @Override
     public int output(double[] x) {
-        double[] input = new double[3];
-        input[0] = x[0] / 100.;
-        input[1] = x[1] / 100.;
-        input[2] = 1.;//wird nicht benötigt
-
-        eingabeSchichtInitialisieren(input);
-        forward();
-
-        double u = output[nodeCount - 1];
-        int out;
-
-        if (u < 0.5) out = 0;
-        else out = +1;
-
-        return out;
+        throw new UnsupportedOperationException();
+//        double[] input = new double[3];
+//        input[0] = x[0] / 100.;
+//        input[1] = x[1] / 100.;
+//        input[2] = 1.;//wird nicht benötigt
+//
+//        initInputLayer(input);
+//        forward();
+//
+//        double u = output[nodeCount - 1];
+//        int out;
+//
+//        if (u < 0.5) out = 0;
+//        else out = +1;
+//
+//        return out;
     }
 
     @Override
     public void ausgabeBias() {
-        int i = 0;
-        boolean ende = false;
-        while (!ende) {
-            ende = true;
-            for (int l = 0; l < network.length; l++) {
-                if (i < network[l].length) {
-                    int k = network[l][i];
-                    System.out.print(bias[k] + "\t");
-                    ende = false;
-                } else {
-                    System.out.print("\t");
-                }
-            }
-            System.out.println();
-            i++;
-        }
+        throw new UnsupportedOperationException();
+//        int i = 0;
+//        boolean ende = false;
+//        while (!ende) {
+//            ende = true;
+//            for (int l = 0; l < network.length; l++) {
+//                if (i < network[l].length) {
+//                    int k = network[l][i];
+//                    System.out.print(bias[k] + "\t");
+//                    ende = false;
+//                } else {
+//                    System.out.print("\t");
+//                }
+//            }
+//            System.out.println();
+//            i++;
+//        }
     }
 
     @Override
@@ -441,72 +407,75 @@ public class KNNxrl implements KNN {
 
     @Override
     public void ausgabeKnotenwerte() {
-        System.out.println("Ausgabe der Knoten-Ausgabewerte");
-
-        int i = 0;
-        boolean ende = false;
-        while (!ende) {
-            ende = true;
-            for (int l = 0; l < network.length; l++) {
-                if (i < network[l].length) {
-                    int k = network[l][i];
-                    double preci = 1000;
-                    double round = ((int) (output[k] * preci)) / preci;
-                    System.out.print(round + "\t");
-                    ende = false;
-                } else {
-                    System.out.print("\t");
-                }
-            }
-            System.out.println();
-            i++;
-        }
+        throw new UnsupportedOperationException();
+//        System.out.println("Ausgabe der Knoten-Ausgabewerte");
+//
+//        int i = 0;
+//        boolean ende = false;
+//        while (!ende) {
+//            ende = true;
+//            for (int l = 0; l < network.length; l++) {
+//                if (i < network[l].length) {
+//                    int k = network[l][i];
+//                    double preci = 1000;
+//                    double round = ((int) (output[k] * preci)) / preci;
+//                    System.out.print(round + "\t");
+//                    ende = false;
+//                } else {
+//                    System.out.print("\t");
+//                }
+//            }
+//            System.out.println();
+//            i++;
+//        }
     }
 
     @Override
     public void ausgabeDelta() {
-        System.out.println("Ausgabe der DELTA");
-        int i = 0;
-        boolean ende = false;
-        while (!ende) {
-            ende = true;
-            for (int l = 0; l < network.length; l++) {
-                if (i < network[l].length) {
-                    int k = network[l][i];
-                    double preci = 100000;
-                    double round = ((int) (delta[k] * preci)) / preci;
-                    System.out.print(round + "\t");
-                    ende = false;
-                } else {
-                    System.out.print("\t");
-                }
-            }
-            System.out.println();
-            i++;
-        }
+        throw new UnsupportedOperationException();
+//        System.out.println("Ausgabe der DELTA");
+//        int i = 0;
+//        boolean ende = false;
+//        while (!ende) {
+//            ende = true;
+//            for (int l = 0; l < network.length; l++) {
+//                if (i < network[l].length) {
+//                    int k = network[l][i];
+//                    double preci = 100000;
+//                    double round = ((int) (delta[k] * preci)) / preci;
+//                    System.out.print(round + "\t");
+//                    ende = false;
+//                } else {
+//                    System.out.print("\t");
+//                }
+//            }
+//            System.out.println();
+//            i++;
+//        }
     }
 
     @Override
     public void ausgabeInputwerte() {
-        System.out.println("Ausgabe der Inputwerte");
-        int i = 0;
-        boolean ende = false;
-        while (!ende) {
-            ende = true;
-            for (int l = 0; l < network.length; l++) {
-                if (i < network[l].length) {
-                    int k = network[l][i];
-                    double preci = 1000;
-                    double round = ((int) (input[k] * preci)) / preci;
-                    System.out.print(round + "\t");
-                    ende = false;
-                } else {
-                    System.out.print("\t");
-                }
-            }
-            System.out.println();
-            i++;
-        }
+        throw new UnsupportedOperationException();
+//        System.out.println("Ausgabe der Inputwerte");
+//        int i = 0;
+//        boolean ende = false;
+//        while (!ende) {
+//            ende = true;
+//            for (int l = 0; l < network.length; l++) {
+//                if (i < network[l].length) {
+//                    int k = network[l][i];
+//                    double preci = 1000;
+//                    double round = ((int) (input[k] * preci)) / preci;
+//                    System.out.print(round + "\t");
+//                    ende = false;
+//                } else {
+//                    System.out.print("\t");
+//                }
+//            }
+//            System.out.println();
+//            i++;
+//        }
     }
 
     @Override
@@ -522,18 +491,24 @@ public class KNNxrl implements KNN {
 
     @Override
     public void ausgabeW() {
-        System.out.println("Ausgabe der Gewichte");
+        throw new UnsupportedOperationException();
+//        System.out.println("Ausgabe der Gewichte");
+//
+//        for (int i = 0; i < nodeCount; i++) {
+//            for (int j = 0; j < nodeCount; j++) {
+//                double preci = 1000;
+//                double round = ((int) (weight[i][j] * preci)) / preci;
+//                if (round != 0)
+//                    System.out.println(i + " " + j + " " + round);
+//            }
+//            // System.out.println();
+//        }
+//        System.out.println();
+    }
 
-        for (int i = 0; i < nodeCount; i++) {
-            for (int j = 0; j < nodeCount; j++) {
-                double preci = 1000;
-                double round = ((int) (weight[i][j] * preci)) / preci;
-                if (round != 0)
-                    System.out.println(i + " " + j + " " + round);
-            }
-            // System.out.println();
-        }
-        System.out.println();
+    private double getLastOutputNodeInLastLayer() {
+        final var lastOutputLayer = output[output.length - 1];
+        return lastOutputLayer[lastOutputLayer.length - 1];
     }
 
 }
