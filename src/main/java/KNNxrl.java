@@ -8,13 +8,7 @@ public class KNNxrl implements KNN {
      * third dimension is output node index in layer + 1
      */
     public final double[][][] weight;
-    private final double[][] delta;
-    private final double[][] input;
-    private final double[][] output;
-    private final int layerCount;
-    private final double maxAlpha;
-    private final double minAlpha;
-    private final int maxEpoch;
+
     /**
      * Network of all nodes, containing their node numbers
      * First dimension are the layers
@@ -22,7 +16,24 @@ public class KNNxrl implements KNN {
      * <p>
      * For each layer, except the last one, the first node is the bias
      */
-    public int[][] network;
+    private final double[][] delta;
+    /**
+     * The input value for a given node
+     * <p>
+     * See {@link KNNxrl#delta} for dimensions
+     */
+    private final double[][] input;
+    /**
+     * The output value for a given node
+     * <p>
+     * See {@link KNNxrl#delta} for dimensions
+     */
+    private final double[][] output;
+    private final int layerCount;
+    private final double maxAlpha;
+    private final double minAlpha;
+    private final int maxEpoch;
+
     private double currentAlpha;
 
     public KNNxrl(int dimensions, TestParameters testParameters) {
@@ -33,21 +44,18 @@ public class KNNxrl implements KNN {
 
         final var layers = testParameters.getLayers();
         layerCount = layers.length + 2;// Anzahl Hiddenschichte + Eingabeschicht + Ausgabeschicht
-        network = new int[layerCount][];
         delta = new double[layerCount][];
         input = new double[layerCount][];
         output = new double[layerCount][];
 
         // Eingabeschicht
         // der erste Knoten der ersten Schicht ist ein Bias, deshalb plus 1
-        network[0] = new int[dimensions + 1];
         delta[0] = new double[dimensions + 1];
         input[0] = new double[dimensions + 1];
         output[0] = new double[dimensions + 1];
 
         // Ausgabeschicht
         // es gibt einen Ausgabeknoten, da ein Klassifikationsproblem vorliegt
-        network[layerCount - 1] = new int[1];
         delta[layerCount - 1] = new double[1];
         input[layerCount - 1] = new double[1];
         output[layerCount - 1] = new double[1];
@@ -55,7 +63,6 @@ public class KNNxrl implements KNN {
         // Hiddenschichten
         for (int layer = 1; layer <= layers.length; layer++) {
             final var nodeInLayer = layers[layer - 1];
-            network[layer] = new int[nodeInLayer];
             delta[layer] = new double[nodeInLayer];
             input[layer] = new double[nodeInLayer];
             output[layer] = new double[nodeInLayer];
@@ -127,8 +134,7 @@ public class KNNxrl implements KNN {
                 input[layer][nodeNumber] = 0.0;
                 final var previousLayer = layer - 1;
                 for (int previousLayerNodeNumber = 0; previousLayerNodeNumber < input[previousLayer].length; previousLayerNodeNumber++) {
-                    int nodeNumberInPreviousLayer = network[previousLayer][previousLayerNodeNumber];
-                    input[layer][nodeNumber] += weight[layer][nodeNumberInPreviousLayer][nodeNumber] * output[previousLayer][nodeNumberInPreviousLayer];
+                    input[layer][nodeNumber] += weight[previousLayer][previousLayerNodeNumber][nodeNumber] * output[previousLayer][previousLayerNodeNumber];
                 }
                 output[layer][nodeNumber] = aktivierungsFunktion(input[layer][nodeNumber]);
             }
@@ -152,7 +158,7 @@ public class KNNxrl implements KNN {
      * delta = error
      */
     private void deltaOutputLayer(double klasse) {
-        int outputLayer = network.length - 1;
+        int outputLayer = layerCount - 1;
         for (int nodeNumber = 0; nodeNumber < output[outputLayer].length; nodeNumber++) {
             final var error = output[outputLayer][nodeNumber] - klasse;
             delta[outputLayer][nodeNumber] = ableitungAktivierungsFunktion(input[outputLayer][nodeNumber]) * error;
@@ -160,11 +166,11 @@ public class KNNxrl implements KNN {
     }
 
     private void deltaHiddenLayers() {
-        int outputLayer = network.length - 1;
+        int outputLayer = layerCount - 1;
         for (int layer = outputLayer - 1; layer >= 0; layer--) {
-            for (int nodeNumber = 1; nodeNumber < network[layer].length; nodeNumber++) {
+            for (int nodeNumber = 1; nodeNumber < delta[layer].length; nodeNumber++) {
                 double sum = 0;
-                for (int nodeNumberNextLayer = 0; nodeNumberNextLayer < network[layer + 1].length; nodeNumberNextLayer++) {
+                for (int nodeNumberNextLayer = 0; nodeNumberNextLayer < delta[layer + 1].length; nodeNumberNextLayer++) {
                     sum += weight[layer][nodeNumber][nodeNumberNextLayer] * delta[layer + 1][nodeNumberNextLayer];
                 }
                 delta[layer][nodeNumber] = ableitungAktivierungsFunktion(input[layer][nodeNumber]) * sum;
@@ -173,9 +179,9 @@ public class KNNxrl implements KNN {
     }
 
     private void updateWeights() {
-        for (int layer = 0; layer < network.length - 1; layer++) {
-            for (int nodeNumber = 0; nodeNumber < network[layer].length; nodeNumber++) {
-                for (int nodeNumberNextLayer = 0; nodeNumberNextLayer < network[layer + 1].length; nodeNumberNextLayer++) {
+        for (int layer = 0; layer < delta.length - 1; layer++) {
+            for (int nodeNumber = 0; nodeNumber < delta[layer].length; nodeNumber++) {
+                for (int nodeNumberNextLayer = 0; nodeNumberNextLayer < delta[layer + 1].length; nodeNumberNextLayer++) {
 //                    final var gradient = output[layer][nodeNumber] * delta[layer + 1][nodeNumberNextLayer];
 //                    final double delta = currentAlpha * gradient;
 
@@ -204,8 +210,8 @@ public class KNNxrl implements KNN {
      */
     private void initWeights() {
         for (int layer = 0; layer < layerCount - 1; layer++) {
-            for (int nodeNumber = 0; nodeNumber < network[layer].length; nodeNumber++) {
-                for (int nodeNumberNextLayer = 0; nodeNumberNextLayer < network[layer + 1].length; nodeNumberNextLayer++) {
+            for (int nodeNumber = 0; nodeNumber < delta[layer].length; nodeNumber++) {
+                for (int nodeNumberNextLayer = 0; nodeNumberNextLayer < delta[layer + 1].length; nodeNumberNextLayer++) {
                     // random number between -1 and 1
                     weight[layer][nodeNumber][nodeNumberNextLayer] = Math.random() * 2 - 1;
                 }
@@ -220,7 +226,7 @@ public class KNNxrl implements KNN {
      */
     private void initInputLayer(double[] input) {
         // Init bias nodes. First node of each layer is bias
-        for (int layer = 0; layer < network.length - 1; layer++) {
+        for (int layer = 0; layer < this.input.length - 1; layer++) {
             this.input[layer][0] = 1.0;
             output[layer][0] = 1.0;
         }
@@ -388,21 +394,22 @@ public class KNNxrl implements KNN {
 
     @Override
     public void ausgabeNetzStruktur() {
-        int i = 0;
-        boolean ende = false;
-        while (!ende) {
-            ende = true;
-            for (int l = 0; l < network.length; l++) {
-                if (i < network[l].length) {
-                    System.out.print(network[l][i] + "\t\t");
-                    ende = false;
-                } else {
-                    System.out.print("\t\t");
-                }
-            }
-            System.out.println();
-            i++;
-        }
+        throw new UnsupportedOperationException();
+//        int i = 0;
+//        boolean ende = false;
+//        while (!ende) {
+//            ende = true;
+//            for (int l = 0; l < network.length; l++) {
+//                if (i < network[l].length) {
+//                    System.out.print(network[l][i] + "\t\t");
+//                    ende = false;
+//                } else {
+//                    System.out.print("\t\t");
+//                }
+//            }
+//            System.out.println();
+//            i++;
+//        }
     }
 
     @Override
@@ -480,13 +487,14 @@ public class KNNxrl implements KNN {
 
     @Override
     public void ausgabeEingabeSchicht() {
-        System.out.println("Ausgabe der Eingabeschicht");
-
-        for (int i = 0; i < network[0].length; i++) {
-            int knoten = network[0][i];
-            System.out.print(output[knoten] + " ");
-        }
-        System.out.println();
+        throw new UnsupportedOperationException();
+//        System.out.println("Ausgabe der Eingabeschicht");
+//
+//        for (int i = 0; i < network[0].length; i++) {
+//            int knoten = network[0][i];
+//            System.out.print(output[knoten] + " ");
+//        }
+//        System.out.println();
     }
 
     @Override
