@@ -1,6 +1,3 @@
-import alpha.AlphaModifier;
-import alpha.ExpAlphaModifier;
-import alpha.LinearAlphaModifier;
 
 public class KNNImpl implements KNN {
     // Feedforward-Neuronales Netz variabler Anzahl an Hiddenschichten
@@ -31,7 +28,6 @@ public class KNNImpl implements KNN {
     // Knotennummer
     public boolean[] bias; // true: Knoten ist Bias
     private double currentAlpha;
-    private AlphaModifier alphaModifier;
 
 
     /**
@@ -41,15 +37,7 @@ public class KNNImpl implements KNN {
         this.maxAlpha = testParameters.getMaxAlpha();
         this.minAlpha = testParameters.getMinAlpha();
         this.currentAlpha = maxAlpha;
-        this.maxEpoche = testParameters.getMaxEpoch();
-        switch (testParameters.getAlphaModifierType()) {
-            case EXP:
-                alphaModifier = new ExpAlphaModifier(maxEpoche, maxAlpha, minAlpha);
-                break;
-            case LINEAR:
-                alphaModifier = new LinearAlphaModifier(maxEpoche, maxAlpha, minAlpha);
-                break;
-        }
+        this.maxEpoche = testParameters.getMaxEpoche();
 
         this.m = testParameters.getLayers().length + 2;// Anzahl Hiddenschichte + Eingabeschicht + Ausgabeschicht
         netz = new int[m][];
@@ -111,7 +99,7 @@ public class KNNImpl implements KNN {
 
         while (!stop) {
             epoche++;
-            updateAlpha(epoche);
+            currentAlpha = currentAlpha - (maxAlpha - minAlpha) / maxEpoche;
 
             for (double[] doubles : liste) {
                 eingabeSchichtInitialisieren(doubles);
@@ -129,13 +117,6 @@ public class KNNImpl implements KNN {
             }
             if (epoche >= maxEpoche + 1 || anzFehler == 0) stop = true;
         }
-    }
-
-    /**
-     * Reduce alpha. High alpha for early epoch, low alpha for later epoch.
-     */
-    private void updateAlpha(int currentEpoch) {
-        currentAlpha = alphaModifier.modify(currentEpoch, currentAlpha);
     }
 
     /**

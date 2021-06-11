@@ -3,7 +3,10 @@ import java.io.File;
 public class ExerciseA {
 
     private static final TestParameters[] testParameters = {
-            new TestParameters(new int[]{8}, 10, 1, TestParameters.AlphaModifierType.LINEAR, 1000),
+            new TestParameters(new int[]{8}, 1, 1, 1000),
+            new TestParameters(new int[]{8}, 1, 1, 10000),
+            new TestParameters(new int[]{8}, 10, 1, 1000),
+            new TestParameters(new int[]{8}, 50, 1, 1000),
     };
 
     public static void main(String[] args) {
