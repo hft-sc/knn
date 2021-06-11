@@ -12,7 +12,7 @@ public class ExerciseA {
         int dimension = daten[0].length - 1;
 
         for (TestParameters parameters : testParameters) {
-            KNN netz = new KNN(dimension, parameters);
+            KNN netz = new KNNImpl(dimension, parameters);
 
             netz.trainieren(daten, false);//Verlustfunktion min
 
