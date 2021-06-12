@@ -6,6 +6,7 @@ public class TestParameters {
     private final double maxAlpha;
     private final double minAlpha;
     private final int maxEpoche;
+    private final double bias = 1.0;
 
     public TestParameters(int[] layers, double maxAlpha, double minAlpha, int maxEpoche) {
         this.layers = layers;
@@ -30,6 +31,10 @@ public class TestParameters {
         return maxEpoche;
     }
 
+    public double getBias() {
+        return bias;
+    }
+
     @Override
     public String toString() {
         return "{" +
@@ -37,6 +42,7 @@ public class TestParameters {
                 ", maxAlpha=" + maxAlpha +
                 ", minAlpha=" + minAlpha +
                 ", maxEpoche=" + maxEpoche +
+                ", bias=" + bias +
                 '}';
     }
 }
