@@ -242,13 +242,14 @@ public class KNNImpl implements KNN {
      * @param input
      */
     private void eingabeSchichtInitialisieren(double[] input) {
+        var bias = 0.1;
         // Alle Bias-Knoten initialisieren
         for (int i = 0; i < netz.length - 1; i++) {// über alle Schichten
             int knoten = netz[i][0]; // der erste Knoten einer Schicht ist Bias!
-            if (!bias[knoten])
+            if (!this.bias[knoten])
                 System.out.println("ups, nicht-Bias-Knoten als bias initialisiert");
-            in[knoten] = 1.0;
-            a[knoten] = 1.0;
+            in[knoten] = bias;
+            a[knoten] = bias;
         }
 
         // Alle Knoten der Eingabeschicht ab dem 2. Knoten mit Eingabe belegen (1. Knoten ist ja Bias!)
@@ -362,7 +363,6 @@ public class KNNImpl implements KNN {
         return ergebnis;
     }
 
-    @Override
     public void evaluierenGUIII(double[][] daten) {
         int z = 0;
         for (int i = 0; i < 100; i++) {
@@ -396,7 +396,6 @@ public class KNNImpl implements KNN {
         GUI.zeichnen(daten, GUIwerteFlaeche);
     }
 
-    @Override
     public int output(double[] x) {
         double[] input = new double[3];
         input[0] = x[0] / 100.;
@@ -415,7 +414,6 @@ public class KNNImpl implements KNN {
         return out;
     }
 
-    @Override
     public void ausgabeBias() {
         int i = 0;
         boolean ende = false;
@@ -435,7 +433,6 @@ public class KNNImpl implements KNN {
         }
     }
 
-    @Override
     public void ausgabeNetzStruktur() {
         int i = 0;
         boolean ende = false;
@@ -454,7 +451,6 @@ public class KNNImpl implements KNN {
         }
     }
 
-    @Override
     public void ausgabeKnotenwerte() {
         System.out.println("Ausgabe der Knoten-Ausgabewerte");
 
@@ -478,7 +474,6 @@ public class KNNImpl implements KNN {
         }
     }
 
-    @Override
     public void ausgabeDelta() {
         System.out.println("Ausgabe der DELTA");
         int i = 0;
@@ -501,7 +496,6 @@ public class KNNImpl implements KNN {
         }
     }
 
-    @Override
     public void ausgabeInputwerte() {
         System.out.println("Ausgabe der Inputwerte");
         int i = 0;
@@ -524,7 +518,6 @@ public class KNNImpl implements KNN {
         }
     }
 
-    @Override
     public void ausgabeEingabeSchicht() {
         System.out.println("Ausgabe der Eingabeschicht");
 
@@ -535,7 +528,6 @@ public class KNNImpl implements KNN {
         System.out.println();
     }
 
-    @Override
     public void ausgabeW() {
         System.out.println("Ausgabe der Gewichte");
 
