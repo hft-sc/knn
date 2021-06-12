@@ -50,7 +50,7 @@ public class KNNMatrix implements KNN {
                 double[] data = dataSet[i];
                 forward(data);
                 backward(data[data.length - 1]);
-                System.out.println("epoch: " + epoch + " index + " + i + Arrays.toString(weight));
+//                System.out.println("epoch: " + epoch + " index " + i + Arrays.toString(weight));
             }
 
 //            currentAlpha -= (maxAlpha - minAlpha) / maxEpoch;
@@ -85,14 +85,16 @@ public class KNNMatrix implements KNN {
         }
     }
 
-    private void backward(double datum) {
+    private void backward(double classification) {
         //backward delta last layer
         {
-            var negativeClassification = -datum; // 1 or 0
+            var negativeClassification = -classification; // 1 or 0
             var lastLayer = layers.length - 1;
-            var tmpDelta = new double[layers[lastLayer]];
-            Arrays.setAll(tmpDelta, index -> Functions.sigmuidDerivative(input[lastLayer].get(index)));
-            delta[lastLayer] = new DoubleMatrix(tmpDelta).mul(output[lastLayer].add(negativeClassification));
+            var derivative = new double[layers[lastLayer]];
+            Arrays.setAll(derivative, index -> Functions.sigmuidDerivative(output[lastLayer].get(index)));
+            final var doubleMatrix = new DoubleMatrix(derivative);
+            final var mul = doubleMatrix.mul(output[lastLayer].add(negativeClassification));
+            delta[lastLayer] = mul;
         }
 
         //backward delta remaining layers
