@@ -59,7 +59,7 @@ public class KNNMatrix implements KNN {
                 backward(data);
             }
 
-            if (print && epoch % 10 == 0) {
+            if (print && epoch % 100 == 0) {
                 double[] errorVector;
                 errorVector = fehler3(dataSet);
                 System.out.println("-Epoch: " + epoch + "fNeg " + (int) errorVector[1] + " fPos " + (int) errorVector[2]
@@ -113,7 +113,10 @@ public class KNNMatrix implements KNN {
                 .muli(Functions.sigmoidDerivative(zs[outputLayer]));
 
         DoubleMatrix[] nablaB = new DoubleMatrix[biases.length];
+        nablaB[nablaB.length - 1] = delta;
         DoubleMatrix[] nablaW = new DoubleMatrix[weights.length];
+        nablaW[nablaW.length - 1] = delta.mmul(activations[nablaW.length - 2].transpose());
+
 
         for (int layer = layers.length - 2; layer > 0; layer--) {
             var z = zs[layer];
@@ -122,28 +125,15 @@ public class KNNMatrix implements KNN {
                     .mmul(delta)
                     .muli(sp);
             nablaB[layer] = delta;
-            nablaW[layer] = delta.mmul(activations[layer].transpose());
+            nablaW[layer] = delta.mmul(activations[layer - 1].transpose());
+        }
+        for (int layer = 1; layer < biases.length; layer++) {
+            biases[layer].addi(nablaB[layer].muli(-1));
         }
 
-//        {
-//            var outputLayer = layers.length - 1;
-//            var expected = row[row.length - 1];
-//            DoubleMatrix delta = DoubleMatrix.scalar(Functions.sigmoidDerivative(activations[outputLayer].get(0)) *
-//                    Math.pow(zs[outputLayer].get(0) - expected, 2));
-//
-//            for (int layer = layers.length - 2; layer > 0; layer--) {
-//                var weightChange = delta.mmul(zs[layer].transpose()).muli(-currentAlpha);
-//                weights[layer].addi(weightChange);
-//
-//
-//                var sigmuid = new DoubleMatrix(activations[layer].rows, activations[layer].columns);
-//                for (int node = 0; node < sigmuid.length; node++) {
-//                    sigmuid.put(node, Functions.sigmoidDerivative(activations[layer].get(node)));
-//                }
-//                var partDelta = weights[layer + 1].transpose().mmul(delta);
-//                delta = sigmuid.mul(partDelta);
-//            }
-//        }
+        for (int layer = 1; layer < weights.length; layer++) {
+            weights[layer - 1].addi(nablaW[layer].muli(-1));
+        }
     }
 
     @Override

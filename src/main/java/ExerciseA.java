@@ -1,17 +1,19 @@
+import java.io.File;
+
 public class ExerciseA {
 
     private static final TestParameters[] testParameters = {
-            new TestParameters(new int[]{3, 4}, 10, 0.1, 1000000, 0.0),
+            new TestParameters(new int[]{8, 9, 8}, 0.5, 0.01, 10000, 0.0),
     };
 
     public static void main(String[] args) {
         System.out.println("start");
 //        var trainData = Einlesen.einlesenBankdaten(new File("train_10k.csv"), false);
 //        var testData = Einlesen.einlesenBankdaten(new File("test_10k.csv"), false);
-        var trainData = XORDataset.XOR_TRAIN;
-        var testData = XORDataset.XOR_TEST;
-//        var trainData = Einlesen.einlesenDiabetes(new File("diabetes_train.csv"), true, false);
-//        var testData = Einlesen.einlesenDiabetes(new File("diabetes_test.csv"), false, false);
+//        var trainData = XORDataset.XOR_TRAIN;
+//        var testData = XORDataset.XOR_TEST;
+        var trainData = Einlesen.einlesenDiabetes(new File("diabetes_train.csv"), true, false);
+        var testData = Einlesen.einlesenDiabetes(new File("diabetes_test.csv"), false, false);
         int dimension = trainData[0].length - 1;
 
         for (TestParameters parameters : testParameters) {
