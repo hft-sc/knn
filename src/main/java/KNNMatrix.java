@@ -53,14 +53,15 @@ public class KNNMatrix implements KNN {
                 backward(data);
             }
 
-            if (print && epoch % 50 == 0) {
+            if (print && epoch % 10 == 0) {
                 double[] errorVector;
                 errorVector = fehler3(dataSet);
                 System.out.println("-Epoch: " + epoch + "fNeg " + (int) errorVector[1] + " fPos " + (int) errorVector[2]
                         + " " + String.format("%.4f", errorVector[0]) + " alpha " + currentAlpha);
+                if ((int) errorVector[1] == 0 && (int) errorVector[2] == 0) break;
             }
 
-            currentAlpha = currentAlpha - (maxAlpha - minAlpha) / maxEpoch;
+            currentAlpha = Math.max(minAlpha, currentAlpha - (maxAlpha - minAlpha) / maxEpoch);
 
         }
     }
@@ -69,8 +70,8 @@ public class KNNMatrix implements KNN {
         outputs[0] = new DoubleMatrix(Arrays.copyOfRange(row, 0, row.length - 1));
         for (int layer = 1; layer < layers.length; layer++) {
             inputs[layer] = weights[layer].mmul(outputs[layer - 1]); //TODO bias
-            outputs[layer] = new DoubleMatrix(inputs[layer].rows, inputs[layer].columns);
 
+            outputs[layer] = new DoubleMatrix(inputs[layer].rows, inputs[layer].columns);
             for (int node = 0; node < outputs[layer].length; node++) {
                 outputs[layer].put(node, Functions.sigmuid(inputs[layer].get(node)));
             }
@@ -99,10 +100,10 @@ public class KNNMatrix implements KNN {
         var outputLayer = layers.length - 1;
         var expected = row[row.length - 1];
         DoubleMatrix delta = DoubleMatrix.scalar(Functions.sigmuidDerivative(inputs[outputLayer].get(0)) *
-                (outputs[outputLayer].get(0) - expected));
+                Math.pow(outputs[outputLayer].get(0) - expected, 2));
 
         for (int layer = layers.length - 2; layer > 0; layer--) {
-            var weightDelta = outputs[layer].mmul(delta).muli(-currentAlpha);
+            var weightDelta = delta.mmul(outputs[layer].transpose()).muli(-currentAlpha);
             weights[layer + 1].addi(weightDelta);
 
 
@@ -110,9 +111,8 @@ public class KNNMatrix implements KNN {
             for (int node = 0; node < sigmuid.length; node++) {
                 sigmuid.put(node, Functions.sigmuidDerivative(inputs[layer].get(node)));
             }
-            var partDelta = weights[layer + 1].mmul(delta);
-            delta = sigmuid.mmul(partDelta);
-
+            var partDelta = weights[layer + 1].transpose().mmul(delta);
+            delta = sigmuid.mul(partDelta);
         }
     }
 

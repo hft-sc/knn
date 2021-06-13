@@ -1,7 +1,7 @@
 public class ExerciseA {
 
     private static final TestParameters[] testParameters = {
-            new TestParameters(new int[]{2}, 10, 1, 2000, 0.0),
+            new TestParameters(new int[]{2, 3}, 10, 0.1, 1000000, 0.0),
     };
 
     public static void main(String[] args) {
@@ -19,7 +19,7 @@ public class ExerciseA {
                 var start = System.currentTimeMillis();
                 KNN netz = new KNNMatrix(dimension, parameters);
 
-                netz.trainieren(trainData, false);//Verlustfunktion min
+                netz.trainieren(trainData, true);//Verlustfunktion min
 
                 var result = netz.evaluieren(testData);
                 Utils.printResult(parameters, result);
@@ -36,9 +36,6 @@ public class ExerciseA {
 //                Utils.printResult(parameters, result);
 //                System.out.println("time: " + (System.currentTimeMillis() - start));
 //            }
-
         }
-
-
     }
 }

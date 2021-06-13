@@ -112,8 +112,8 @@ public class KNNImpl implements KNN {
             fehler = fehlerVektor[0];
             anzFehler = (int) fehlerVektor[1];
 
-            if (print) {
-                System.out.println("-Epoche: " + epoche + " " + anzFehler + " " + fehler + " minAnzFehler " + minAnzFehler + " minFehler " + minFehler + " " + goBack + " " + maxAlpha);
+            if (print && epoche % 50 == 0) {
+                System.out.println("-Epoche: " + epoche + " " + anzFehler + " " + fehler);
             }
             if (epoche >= maxEpoche + 1 || anzFehler == 0) stop = true;
         }
