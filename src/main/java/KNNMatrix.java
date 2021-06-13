@@ -1,5 +1,6 @@
 import org.jblas.DoubleMatrix;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class KNNMatrix implements KNN {
@@ -14,7 +15,7 @@ public class KNNMatrix implements KNN {
 
     private final double maxAlpha;
     private final double minAlpha;
-    private final double currentAlpha;
+    private double currentAlpha;
 
     public KNNMatrix(int dimensions, TestParameters testParameters) {
         maxAlpha = testParameters.getMaxAlpha();
@@ -35,8 +36,17 @@ public class KNNMatrix implements KNN {
         }
 
         bias = testParameters.getBias();
+
         output = new DoubleMatrix[layers.length];
+        for (int layer = 0; layer < layers.length; layer++) {
+            output[layer] = DoubleMatrix.rand(layers[layer], 1);
+        }
+
         delta = new DoubleMatrix[layers.length];
+        for (int layer = 0; layer < layers.length; layer++) {
+            delta[layer] = DoubleMatrix.rand(layers[layer], 1);
+        }
+
     }
 
     @Override
@@ -44,50 +54,97 @@ public class KNNMatrix implements KNN {
         for (int epoch = 0; epoch < maxEpoch; epoch++) {
             for (double[] data : dataSet) {
                 forward(data);
-                backward(data[data.length - 1]);
+                backward(data);
             }
 
             if (print) {
                 double[] errorVector;
                 errorVector = fehler3(dataSet);
-                System.out.println("-Epoch: " + epoch + " " + (int) errorVector[1] + " " + String.format("%.4f", errorVector[0]));
+                System.out.println("-Epoch: " + epoch + "fNeg " + (int) errorVector[1] + " fPos " + (int) errorVector[2]
+                        + " " + String.format("%.4f", errorVector[0]));
             }
 
-//            currentAlpha -= (maxAlpha - minAlpha) / maxEpoch;
+            currentAlpha -= (maxAlpha - minAlpha) / maxEpoch;
         }
     }
 
-    private void forward(double[] data) {
-        DoubleMatrix activations;
-        // forwards first layer only
-        {
-            int firstLayer = 0;
-            //data contains result, which needs to be excluded
-            final var inputData = new DoubleMatrix(Arrays.copyOfRange(data, 0, data.length - 1));
-            activations = weights[firstLayer].mmul(inputData).add(bias);
-            var newOutput = new double[layers[firstLayer]];
-            for (int node = 0; node < activations.length; node++) {
-                newOutput[node] = Functions.sigmuid(activations.get(node));
+    private void forward(double[] row) {
+        var inputs = new DoubleMatrix(Arrays.copyOfRange(row, 0, row.length - 1));
+
+        for (int layer = 0; layer < layers.length; layer++) {
+            final var nodeCount = layers[layer];
+            DoubleMatrix newInputs = new DoubleMatrix(nodeCount, 1);
+            for (int node = 0; node < nodeCount; node++) {
+                var activation = active(weights[layer].getRow(node), inputs, bias);
+                final var outputValue = Functions.sigmuid(activation);
+                output[layer].put(node, outputValue);
+                newInputs.put(node, outputValue);
             }
-            output[firstLayer] = new DoubleMatrix(newOutput);
+            inputs = newInputs;
         }
+    }
 
-        //forward remaining layers
-        {
-            for (int layer = 1; layer < layers.length; layer++) {
-                activations = weights[layer].mmul(output[layer - 1]).add(bias);
-                var newOutput = new double[layers[layer]];
+    /**
+     * For a single node
+     */
+    private double active(DoubleMatrix weights, DoubleMatrix inputs, double bias) {
+        var activation = bias;
+        for (int i = 0; i < inputs.length; i++) {
+            activation += weights.get(i) * inputs.get(i);
+        }
+        return activation;
+    }
 
-                for (int node = 0; node < activations.length; node++) {
-                    newOutput[node] = Functions.sigmuid(activations.get(node)) + bias;
+    private void backward(double[] row) {
+        var expected = row[row.length - 1];
+        double[] expectedArray = expected == 1.0 ? new double[]{0, 1.0} : new double[]{1.0, 0};
+        backwardErrors(expectedArray);
+
+        updateWeights(row);
+    }
+
+    private void backwardErrors(double[] expected) {
+        var errors = new ArrayList<Double>();
+
+        for (int layer = layers.length - 1; layer >= 0; layer--) {
+            if (layer == layers.length - 1) {
+                for (int node = 0; node < layers[layer]; node++) {
+                    errors.add(expected[node] - output[layer].get(node));
                 }
-                output[layer] = new DoubleMatrix(newOutput);
+            } else {
+                for (int node = 0; node < layers[layer]; node++) {
+                    var error = 0.0;
+                    for (int nodeNextLayer = 0; nodeNextLayer < layers[layer + 1]; nodeNextLayer++) {
+                        error += delta[layer + 1].get(nodeNextLayer) * weights[layer + 1].get(nodeNextLayer, node);
+                    }
+                    errors.add(error);
+                }
+            }
+
+            for (int node = 0; node < layers[layer]; node++) {
+                delta[layer].put(node, errors.get(node) * Functions.sigmuidDerivative(output[layer].get(node)));
+            }
+        }
+    }
+
+    private void updateWeights(double[] row) {
+        for (int layer = 0; layer < layers.length; layer++) {
+            var inputs = new DoubleMatrix(Arrays.copyOfRange(row, 0, row.length - 1));
+            if (layer != 0) {
+                inputs = output[layer - 1];
+            }
+
+            for (int node = 0; node < layers[layer]; node++) {
+                for (int input = 0; input < inputs.length; input++) {
+                    var newValue = weights[layer].get(node, input) + currentAlpha * delta[layer].get(node) * inputs.get(input);
+                    weights[layer].put(node, input, newValue);
+                }
             }
         }
     }
 
     private double[] fehler3(double[][] liste) {
-        double[] fehler = {0.0, 0.0};
+        double[] fehler = {0.0, 0.0, 0.0};
 
         for (double[] doubles : liste) {
             forward(doubles);
@@ -95,48 +152,13 @@ public class KNNMatrix implements KNN {
             final var outputLayer = output[output.length - 1];
             final var output = outputLayer.get(outputLayer.length - 1);
             fehler[0] += Math.pow(classification - output, 2);
-            if ((output < 0.5 && (int) classification == 1) || (output >= 0.5 && (int) classification == 0)) {
+            if (output < 0.5 && (int) classification == 1) {
                 fehler[1]++;
+            } else if (output >= 0.5 && (int) classification == 0) {
+                fehler[2]++;
             }
         }
         return fehler;
-    }
-
-    private void backward(double classification) {
-        //backward delta last layer
-        {
-            var negativeClassification = -classification; // 1 or 0
-            var lastLayer = layers.length - 1;
-
-            var derivatives = new double[layers[lastLayer]];
-            Arrays.setAll(derivatives, index -> Functions.sigmuidDerivative(output[lastLayer].get(index)));
-
-            final var doubleMatrix = new DoubleMatrix(derivatives);
-            final var mul = doubleMatrix.mul(output[lastLayer].add(negativeClassification));
-            delta[lastLayer] = mul;
-        }
-
-        //backward delta remaining layers
-        {
-            for (int layer = layers.length - 2; layer >= 0; layer--) {
-                var tmpDelta = new double[layers[layer]];
-                int finalLayer = layer;
-                Arrays.setAll(tmpDelta, index -> Functions.sigmuidDerivative(output[finalLayer].get(index)));
-
-                final var mmul = delta[layer + 1].transpose().mmul(weights[layer + 1]);
-                final var transpose = new DoubleMatrix(tmpDelta).transpose();
-                delta[layer] = transpose.mul(mmul); //TODO
-            }
-        }
-
-        //backwards update weights
-        {
-            for (int layer = 0; layer < layers.length; layer++) {
-                final var mul1 = output[layer].mul(delta[layer].transpose());
-                final var mul = mul1.mul(-currentAlpha);
-                weights[layer].addiColumnVector(mul);
-            }
-        }
     }
 
     @Override
