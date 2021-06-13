@@ -1,7 +1,7 @@
 public class ExerciseA {
 
     private static final TestParameters[] testParameters = {
-            new TestParameters(new int[]{2, 3}, 10, 0.1, 1000000, 0.0),
+            new TestParameters(new int[]{3, 4}, 10, 0.1, 1000000, 0.0),
     };
 
     public static void main(String[] args) {

@@ -8,12 +8,12 @@ public class KNNMatrix implements KNN {
     /**
      * vector, not matrix
      */
-    private final DoubleMatrix[] outputs;
-    private final DoubleMatrix[] inputs;
+    private final DoubleMatrix[] zs;
+    private final DoubleMatrix[] activations;
+    private final DoubleMatrix[] biases;
 
     private final int[] layers;
     private final int maxEpoch;
-    private final double bias;
 
     private final double maxAlpha;
     private final double minAlpha;
@@ -32,17 +32,23 @@ public class KNNMatrix implements KNN {
         layers[layers.length - 1] = 1;
 
         weights = new DoubleMatrix[layers.length];
-        var inputCount = dimensions;
-        for (int layer = 0; layer < layers.length; layer++) {
+        for (int layer = 0; layer < layers.length - 1; layer++) {
             final var nodeCount = layers[layer];
-            weights[layer] = DoubleMatrix.rand(nodeCount, inputCount);
-            inputCount = nodeCount;
+            final var nodeCountNextLayer = layers[layer + 1];
+            weights[layer] = DoubleMatrix.rand(nodeCountNextLayer, nodeCount);
         }
 
-        bias = testParameters.getBias();
 
-        outputs = new DoubleMatrix[layers.length];
-        inputs = new DoubleMatrix[layers.length];
+        zs = new DoubleMatrix[layers.length];
+        activations = new DoubleMatrix[layers.length];
+        for (int layer = 0; layer < layers.length; layer++) {
+            activations[layer] = new DoubleMatrix(layers[layer]);
+        }
+
+        biases = new DoubleMatrix[layers.length];
+        for (int layer = 0; layer < layers.length; layer++) {
+            biases[layer] = DoubleMatrix.rand(layers[layer], 1);
+        }
     }
 
     @Override
@@ -67,13 +73,15 @@ public class KNNMatrix implements KNN {
     }
 
     private void forward(double[] row) {
-        outputs[0] = new DoubleMatrix(Arrays.copyOfRange(row, 0, row.length - 1));
-        for (int layer = 1; layer < layers.length; layer++) {
-            inputs[layer] = weights[layer].mmul(outputs[layer - 1]); //TODO bias
+        activations[0] = new DoubleMatrix(Arrays.copyOfRange(row, 0, row.length - 1));
 
-            outputs[layer] = new DoubleMatrix(inputs[layer].rows, inputs[layer].columns);
-            for (int node = 0; node < outputs[layer].length; node++) {
-                outputs[layer].put(node, Functions.sigmuid(inputs[layer].get(node)));
+        for (int layer = 1; layer < layers.length; layer++) {
+            zs[layer] = weights[layer - 1]
+                    .mmul(activations[layer - 1])
+                    .addiColumnVector(biases[layer]);
+            for (int i = 0; i < zs[layer].length; i++) {
+                final var sigmoid = Functions.sigmoid(zs[layer].get(i));
+                activations[layer].put(i, sigmoid);
             }
         }
     }
@@ -84,7 +92,7 @@ public class KNNMatrix implements KNN {
         for (double[] doubles : liste) {
             forward(doubles);
             var expected = doubles[doubles.length - 1];
-            final var outputLayer = outputs[outputs.length - 1];
+            final var outputLayer = zs[zs.length - 1];
             final var output = outputLayer.get(outputLayer.length - 1);
             fehler[0] += Math.pow(expected - output, 2);
             if (output < 0.5 && (int) expected == 1) {
@@ -99,21 +107,43 @@ public class KNNMatrix implements KNN {
     private void backward(double[] row) {
         var outputLayer = layers.length - 1;
         var expected = row[row.length - 1];
-        DoubleMatrix delta = DoubleMatrix.scalar(Functions.sigmuidDerivative(inputs[outputLayer].get(0)) *
-                Math.pow(outputs[outputLayer].get(0) - expected, 2));
+
+        var delta = activations[activations.length - 1]
+                .add(-expected)
+                .muli(Functions.sigmoidDerivative(zs[outputLayer]));
+
+        DoubleMatrix[] nablaB = new DoubleMatrix[biases.length];
+        DoubleMatrix[] nablaW = new DoubleMatrix[weights.length];
 
         for (int layer = layers.length - 2; layer > 0; layer--) {
-            var weightDelta = delta.mmul(outputs[layer].transpose()).muli(-currentAlpha);
-            weights[layer + 1].addi(weightDelta);
-
-
-            var sigmuid = new DoubleMatrix(inputs[layer].rows, inputs[layer].columns);
-            for (int node = 0; node < sigmuid.length; node++) {
-                sigmuid.put(node, Functions.sigmuidDerivative(inputs[layer].get(node)));
-            }
-            var partDelta = weights[layer + 1].transpose().mmul(delta);
-            delta = sigmuid.mul(partDelta);
+            var z = zs[layer];
+            var sp = Functions.sigmoidDerivative(z);
+            delta = weights[layer].transpose()
+                    .mmul(delta)
+                    .muli(sp);
+            nablaB[layer] = delta;
+            nablaW[layer] = delta.mmul(activations[layer].transpose());
         }
+
+//        {
+//            var outputLayer = layers.length - 1;
+//            var expected = row[row.length - 1];
+//            DoubleMatrix delta = DoubleMatrix.scalar(Functions.sigmoidDerivative(activations[outputLayer].get(0)) *
+//                    Math.pow(zs[outputLayer].get(0) - expected, 2));
+//
+//            for (int layer = layers.length - 2; layer > 0; layer--) {
+//                var weightChange = delta.mmul(zs[layer].transpose()).muli(-currentAlpha);
+//                weights[layer].addi(weightChange);
+//
+//
+//                var sigmuid = new DoubleMatrix(activations[layer].rows, activations[layer].columns);
+//                for (int node = 0; node < sigmuid.length; node++) {
+//                    sigmuid.put(node, Functions.sigmoidDerivative(activations[layer].get(node)));
+//                }
+//                var partDelta = weights[layer + 1].transpose().mmul(delta);
+//                delta = sigmuid.mul(partDelta);
+//            }
+//        }
     }
 
     @Override
@@ -130,7 +160,7 @@ public class KNNMatrix implements KNN {
 
         for (double[] data : liste) {
             forward(data);
-            var lastLayer = outputs[outputs.length - 1];
+            var lastLayer = zs[zs.length - 1];
             var classification = lastLayer.get(0);
 
             expectedOutput = data[data.length - 1];
