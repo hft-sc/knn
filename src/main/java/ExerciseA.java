@@ -3,25 +3,42 @@ import java.io.File;
 public class ExerciseA {
 
     private static final TestParameters[] testParameters = {
-            new TestParameters(new int[]{8}, 10, 1, TestParameters.AlphaModifierType.LINEAR, 1000),
+            new TestParameters(new int[]{22, 66, 55}, 2, 0.01, 2000, 10),
+            new TestParameters(new int[]{12, 6}, 2, 0.01, 2000, 40),
     };
 
     public static void main(String[] args) {
-//        double[][] daten = Einlesen.einlesenBankdaten(new File("4_Trainingsdaten.csv"), false);
-        double[][] daten = Einlesen.einlesenDiabetes(new File("diabetes_train.csv"), true, false);
-        int dimension = daten[0].length - 1;
+        System.out.println("start");
+//        var trainData = Einlesen.einlesenBankdaten(new File("train_10k.csv"), false);
+//        var testData = Einlesen.einlesenBankdaten(new File("test_10k.csv"), false);
+//        var trainData = XORDataset.XOR_TRAIN;
+//        var testData = XORDataset.XOR_TEST;
+        var trainData = Einlesen.einlesenDiabetes(new File("diabetes_train.csv"), true, false);
+        var testData = Einlesen.einlesenDiabetes(new File("diabetes_test.csv"), false, false);
+        int dimension = trainData[0].length - 1;
 
         for (TestParameters parameters : testParameters) {
-            KNN netz = new KNN(dimension, parameters);
+            {
+                var start = System.currentTimeMillis();
+                KNN netz = new KNNMatrix(dimension, parameters);
 
-            netz.trainieren(daten, false);//Verlustfunktion min
+                netz.trainieren(trainData, false);//Verlustfunktion min
 
-//            daten = Einlesen.einlesenBankdaten(new File("test01.csv"), false);
-            daten = Einlesen.einlesenDiabetes(new File("diabetes_test.csv"), false, false);
-            var result = netz.evaluieren(daten);
-            Utils.printResult(parameters, result);
+                var result = netz.evaluieren(testData);
+                Utils.printResult(parameters, result);
+                System.out.println("time: " + (System.currentTimeMillis() - start));
+            }
+
+            {
+                var start = System.currentTimeMillis();
+                KNN netz = new KNNImpl(dimension, parameters);
+
+                netz.trainieren(trainData, false);//Verlustfunktion min
+
+                var result = netz.evaluieren(testData);
+                Utils.printResult(parameters, result);
+                System.out.println("time: " + (System.currentTimeMillis() - start));
+            }
         }
-
-
     }
 }

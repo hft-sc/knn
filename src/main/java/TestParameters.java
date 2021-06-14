@@ -5,19 +5,15 @@ public class TestParameters {
     private final int[] layers;
     private final double maxAlpha;
     private final double minAlpha;
-    private final AlphaModifierType alphaModifierType;
     private final int maxEpoch;
+    private final int batchSize;
 
-    public TestParameters(int[] layers, double maxAlpha, double minAlpha, AlphaModifierType alphaModifierType, int maxEpoche) {
+    public TestParameters(int[] layers, double maxAlpha, double minAlpha, int maxEpoch, int batchSize) {
         this.layers = layers;
         this.maxAlpha = maxAlpha;
         this.minAlpha = minAlpha;
-        this.alphaModifierType = alphaModifierType;
-        this.maxEpoch = maxEpoche;
-    }
-
-    public AlphaModifierType getAlphaModifierType() {
-        return alphaModifierType;
+        this.maxEpoch = maxEpoch;
+        this.batchSize = batchSize;
     }
 
     public int[] getLayers() {
@@ -36,19 +32,17 @@ public class TestParameters {
         return maxEpoch;
     }
 
+    public int getBatchSize() {
+        return batchSize;
+    }
+
     @Override
     public String toString() {
         return "{" +
                 "layers=" + Arrays.toString(layers) +
                 ", maxAlpha=" + maxAlpha +
                 ", minAlpha=" + minAlpha +
-                ", alphaModType=" + alphaModifierType +
                 ", maxEpoche=" + maxEpoch +
                 '}';
-    }
-
-    enum AlphaModifierType {
-        LINEAR,
-        EXP
     }
 }
