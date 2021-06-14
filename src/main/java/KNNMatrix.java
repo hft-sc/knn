@@ -9,7 +9,16 @@ import java.util.stream.Collectors;
 
 public class KNNMatrix implements KNN {
 
+    /**
+     * array of n x m matrix
+     * each entry of array is one layer
+     */
     private final DoubleMatrix[] weights;
+
+    /**
+     * array of vector
+     * each entry of array is one layer
+     */
     private final DoubleMatrix[] biases;
 
     private final int[] layers;
@@ -44,6 +53,7 @@ public class KNNMatrix implements KNN {
         for (int layer = 0; layer < layers.length; layer++) {
             biases[layer] = DoubleMatrix.rand(layers[layer], 1);
         }
+        System.out.println();
     }
 
     @Override
