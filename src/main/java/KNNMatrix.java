@@ -4,8 +4,8 @@ import org.jblas.DoubleMatrix;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class KNNMatrix implements KNN {
 
@@ -61,17 +61,25 @@ public class KNNMatrix implements KNN {
         for (int epoch = 0; epoch < maxEpoch; epoch++) {
             final var shuffledDataSet = Arrays.asList(dataSet);
             Collections.shuffle(shuffledDataSet);
-            ListUtils.partition(shuffledDataSet, batchSize).forEach((List<double[]> batch) -> {
-                var adjustments = batch.stream().map(row -> {
-                    var values = forward(row);
-                    return calculateAdjustments(row, values);
-                }).collect(Collectors.toUnmodifiableList());
+            final var batches = ListUtils.partition(shuffledDataSet, batchSize);
+            for (List<double[]> batch : batches) {
+                var biasAdjustments = new LinkedList<DoubleMatrix[]>();
+                var weightAdjustments = new LinkedList<DoubleMatrix[]>();
 
-                adjustments.stream().map(Pair::getLeft)
-                        .forEach(this::adjustBiases);
-                adjustments.stream().map(Pair::getRight)
-                        .forEach(this::adjustWeights);
-            });
+                for (double[] row : batch) {
+                    var values = forward(row);
+                    var adjustments = calculateAdjustments(row, values);
+                    biasAdjustments.add(adjustments.getLeft());
+                    weightAdjustments.add(adjustments.getRight());
+                }
+
+                for (DoubleMatrix[] adjustment : biasAdjustments) {
+                    adjustBiases(adjustment);
+                }
+                for (DoubleMatrix[] adjustment : weightAdjustments) {
+                    adjustWeights(adjustment);
+                }
+            }
 
             if (print && epoch % 100 == 0) {
                 double[] errorVector;
