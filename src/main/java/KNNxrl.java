@@ -40,7 +40,7 @@ public class KNNxrl implements KNN {
         maxAlpha = testParameters.getMaxAlpha();
         minAlpha = testParameters.getMinAlpha();
         currentAlpha = maxAlpha;
-        maxEpoch = testParameters.getMaxEpoche();
+        maxEpoch = testParameters.getMaxEpoch();
 
         final var layers = testParameters.getLayers();
         layerCount = layers.length + 2;// Anzahl Hiddenschichte + Eingabeschicht + Ausgabeschicht

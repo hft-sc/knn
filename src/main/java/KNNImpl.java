@@ -37,7 +37,7 @@ public class KNNImpl implements KNN {
         this.maxAlpha = testParameters.getMaxAlpha();
         this.minAlpha = testParameters.getMinAlpha();
         this.currentAlpha = maxAlpha;
-        this.maxEpoche = testParameters.getMaxEpoche();
+        this.maxEpoche = testParameters.getMaxEpoch();
 
         this.m = testParameters.getLayers().length + 2;// Anzahl Hiddenschichte + Eingabeschicht + Ausgabeschicht
         netz = new int[m][];

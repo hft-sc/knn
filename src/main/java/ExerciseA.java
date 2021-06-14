@@ -3,7 +3,8 @@ import java.io.File;
 public class ExerciseA {
 
     private static final TestParameters[] testParameters = {
-            new TestParameters(new int[]{12, 12}, 0.5, 0.01, 10000),
+            new TestParameters(new int[]{22, 66, 55}, 2, 0.01, 2000, 10),
+            new TestParameters(new int[]{12, 6}, 2, 0.01, 2000, 40),
     };
 
     public static void main(String[] args) {

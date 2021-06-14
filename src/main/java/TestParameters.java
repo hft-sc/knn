@@ -5,13 +5,15 @@ public class TestParameters {
     private final int[] layers;
     private final double maxAlpha;
     private final double minAlpha;
-    private final int maxEpoche;
+    private final int maxEpoch;
+    private final int batchSize;
 
-    public TestParameters(int[] layers, double maxAlpha, double minAlpha, int maxEpoche) {
+    public TestParameters(int[] layers, double maxAlpha, double minAlpha, int maxEpoch, int batchSize) {
         this.layers = layers;
         this.maxAlpha = maxAlpha;
         this.minAlpha = minAlpha;
-        this.maxEpoche = maxEpoche;
+        this.maxEpoch = maxEpoch;
+        this.batchSize = batchSize;
     }
 
     public int[] getLayers() {
@@ -26,10 +28,13 @@ public class TestParameters {
         return minAlpha;
     }
 
-    public int getMaxEpoche() {
-        return maxEpoche;
+    public int getMaxEpoch() {
+        return maxEpoch;
     }
 
+    public int getBatchSize() {
+        return batchSize;
+    }
 
     @Override
     public String toString() {
@@ -37,7 +42,7 @@ public class TestParameters {
                 "layers=" + Arrays.toString(layers) +
                 ", maxAlpha=" + maxAlpha +
                 ", minAlpha=" + minAlpha +
-                ", maxEpoche=" + maxEpoche +
+                ", maxEpoche=" + maxEpoch +
                 '}';
     }
 }

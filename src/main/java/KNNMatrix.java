@@ -1,6 +1,11 @@
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jblas.DoubleMatrix;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class KNNMatrix implements KNN {
 
@@ -14,6 +19,7 @@ public class KNNMatrix implements KNN {
 
     private final int[] layers;
     private final int maxEpoch;
+    private final int batchSize;
 
     private final double maxAlpha;
     private final double minAlpha;
@@ -23,7 +29,8 @@ public class KNNMatrix implements KNN {
         maxAlpha = testParameters.getMaxAlpha();
         minAlpha = testParameters.getMinAlpha();
         currentAlpha = maxAlpha;
-        maxEpoch = testParameters.getMaxEpoche();
+        maxEpoch = testParameters.getMaxEpoch();
+        batchSize = testParameters.getBatchSize();
 
         final var hiddenLayers = testParameters.getLayers();
         layers = new int[hiddenLayers.length + 2];
@@ -54,10 +61,19 @@ public class KNNMatrix implements KNN {
     @Override
     public void trainieren(double[][] dataSet, boolean print) {
         for (int epoch = 0; epoch < maxEpoch; epoch++) {
-            for (double[] data : dataSet) {
-                forward(data);
-                backward(data);
-            }
+            final var shuffledDataSet = Arrays.asList(dataSet);
+            Collections.shuffle(shuffledDataSet);
+            ListUtils.partition(shuffledDataSet, batchSize).forEach((List<double[]> batch) -> {
+                var adjustments = batch.stream().map(row -> {
+                    var values = forward(row);
+                    return calculateAdjustments(row, values);
+                }).collect(Collectors.toUnmodifiableList());
+
+                adjustments.stream().map(Pair::getLeft)
+                        .forEach(this::adjustBiases);
+                adjustments.stream().map(Pair::getRight)
+                        .forEach(this::adjustWeights);
+            });
 
             if (print && epoch % 100 == 0) {
                 double[] errorVector;
@@ -72,7 +88,16 @@ public class KNNMatrix implements KNN {
         }
     }
 
-    private void forward(double[] row) {
+    /**
+     * Left are the zs, right are the activations
+     */
+    private Pair<DoubleMatrix[], DoubleMatrix[]> forward(double[] row) {
+        var zs = new DoubleMatrix[layers.length];
+        var activations = new DoubleMatrix[layers.length];
+        for (int layer = 0; layer < layers.length; layer++) {
+            activations[layer] = new DoubleMatrix(layers[layer]);
+        }
+
         activations[0] = new DoubleMatrix(Arrays.copyOfRange(row, 0, row.length - 1));
 
         for (int layer = 1; layer < layers.length; layer++) {
@@ -84,13 +109,17 @@ public class KNNMatrix implements KNN {
                 activations[layer].put(i, sigmoid);
             }
         }
+
+        return Pair.of(zs, activations);
     }
 
     private double[] fehler3(double[][] liste) {
         double[] fehler = {0.0, 0.0, 0.0};
 
         for (double[] doubles : liste) {
-            forward(doubles);
+            var values = forward(doubles);
+            var zs = values.getLeft();
+
             var expected = doubles[doubles.length - 1];
             final var outputLayer = zs[zs.length - 1];
             final var output = outputLayer.get(outputLayer.length - 1);
@@ -104,7 +133,10 @@ public class KNNMatrix implements KNN {
         return fehler;
     }
 
-    private void backward(double[] row) {
+    private Pair<DoubleMatrix[], DoubleMatrix[]> calculateAdjustments(double[] row, Pair<DoubleMatrix[], DoubleMatrix[]> values) {
+        var zs = values.getLeft();
+        var activations = values.getRight();
+
         var outputLayer = layers.length - 1;
         var expected = row[row.length - 1];
 
@@ -112,11 +144,10 @@ public class KNNMatrix implements KNN {
                 .add(-expected)
                 .muli(Functions.sigmoidDerivative(zs[outputLayer]));
 
-        DoubleMatrix[] nablaB = new DoubleMatrix[biases.length];
-        nablaB[nablaB.length - 1] = delta;
-        DoubleMatrix[] nablaW = new DoubleMatrix[weights.length];
-        nablaW[nablaW.length - 1] = delta.mmul(activations[nablaW.length - 2].transpose());
-
+        DoubleMatrix[] biasAdjustments = new DoubleMatrix[biases.length];
+        biasAdjustments[biasAdjustments.length - 1] = delta;
+        DoubleMatrix[] weightAdjustments = new DoubleMatrix[weights.length];
+        weightAdjustments[weightAdjustments.length - 1] = delta.mmul(activations[weightAdjustments.length - 2].transpose());
 
         for (int layer = layers.length - 2; layer > 0; layer--) {
             var z = zs[layer];
@@ -124,15 +155,22 @@ public class KNNMatrix implements KNN {
             delta = weights[layer].transpose()
                     .mmul(delta)
                     .muli(sp);
-            nablaB[layer] = delta;
-            nablaW[layer] = delta.mmul(activations[layer - 1].transpose());
-        }
-        for (int layer = 1; layer < biases.length; layer++) {
-            biases[layer].addi(nablaB[layer].muli(-1));
+            biasAdjustments[layer] = delta;
+            weightAdjustments[layer] = delta.mmul(activations[layer - 1].transpose());
         }
 
+        return Pair.of(biasAdjustments, weightAdjustments);
+    }
+
+    private void adjustWeights(DoubleMatrix[] weightAdjustments) {
         for (int layer = 1; layer < weights.length; layer++) {
-            weights[layer - 1].addi(nablaW[layer].muli(-1));
+            weights[layer - 1].addi(weightAdjustments[layer].muli(-1));
+        }
+    }
+
+    private void adjustBiases(DoubleMatrix[] biasAdjustments) {
+        for (int layer = 1; layer < biases.length; layer++) {
+            biases[layer].addi(biasAdjustments[layer].muli(-1));
         }
     }
 
@@ -140,7 +178,6 @@ public class KNNMatrix implements KNN {
     public double[] evaluieren(double[][] liste) {
         double[] result = new double[12];
 
-        double expectedOutput;
         int falschPositiv = 0;
         int falschNegativ = 0;
         int richtigPositiv = 0;
@@ -149,11 +186,12 @@ public class KNNMatrix implements KNN {
         int anzahlNegativ = 0;
 
         for (double[] data : liste) {
-            forward(data);
+            var values = forward(data);
+            var zs = values.getLeft();
             var lastLayer = zs[zs.length - 1];
             var classification = lastLayer.get(0);
 
-            expectedOutput = data[data.length - 1];
+            double expectedOutput = data[data.length - 1];
             if ((int) expectedOutput == 1) {
                 anzahlPositiv++;
 
