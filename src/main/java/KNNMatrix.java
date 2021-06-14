@@ -10,11 +10,6 @@ import java.util.stream.Collectors;
 public class KNNMatrix implements KNN {
 
     private final DoubleMatrix[] weights;
-    /**
-     * vector, not matrix
-     */
-    private final DoubleMatrix[] zs;
-    private final DoubleMatrix[] activations;
     private final DoubleMatrix[] biases;
 
     private final int[] layers;
@@ -43,13 +38,6 @@ public class KNNMatrix implements KNN {
             final var nodeCount = layers[layer];
             final var nodeCountNextLayer = layers[layer + 1];
             weights[layer] = DoubleMatrix.rand(nodeCountNextLayer, nodeCount);
-        }
-
-
-        zs = new DoubleMatrix[layers.length];
-        activations = new DoubleMatrix[layers.length];
-        for (int layer = 0; layer < layers.length; layer++) {
-            activations[layer] = new DoubleMatrix(layers[layer]);
         }
 
         biases = new DoubleMatrix[layers.length];
@@ -84,7 +72,6 @@ public class KNNMatrix implements KNN {
             }
 
             currentAlpha = Math.max(minAlpha, currentAlpha - (maxAlpha - minAlpha) / maxEpoch);
-
         }
     }
 
