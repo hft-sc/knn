@@ -3,7 +3,7 @@ import java.io.File;
 public class ExerciseA {
 
     private static final TestParameters[] testParameters = {
-            new TestParameters(new int[]{8, 9, 8}, 0.5, 0.01, 10000, 0.0),
+            new TestParameters(new int[]{12, 12}, 0.5, 0.01, 10000),
     };
 
     public static void main(String[] args) {
@@ -21,23 +21,23 @@ public class ExerciseA {
                 var start = System.currentTimeMillis();
                 KNN netz = new KNNMatrix(dimension, parameters);
 
-                netz.trainieren(trainData, true);//Verlustfunktion min
+                netz.trainieren(trainData, false);//Verlustfunktion min
 
                 var result = netz.evaluieren(testData);
                 Utils.printResult(parameters, result);
                 System.out.println("time: " + (System.currentTimeMillis() - start));
             }
 
-//            {
-//                var start = System.currentTimeMillis();
-//                KNN netz = new KNNImpl(dimension, parameters);
-//
-//                netz.trainieren(trainData, false);//Verlustfunktion min
-//
-//                var result = netz.evaluieren(testData);
-//                Utils.printResult(parameters, result);
-//                System.out.println("time: " + (System.currentTimeMillis() - start));
-//            }
+            {
+                var start = System.currentTimeMillis();
+                KNN netz = new KNNImpl(dimension, parameters);
+
+                netz.trainieren(trainData, false);//Verlustfunktion min
+
+                var result = netz.evaluieren(testData);
+                Utils.printResult(parameters, result);
+                System.out.println("time: " + (System.currentTimeMillis() - start));
+            }
         }
     }
 }
