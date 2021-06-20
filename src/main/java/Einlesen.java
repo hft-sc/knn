@@ -16,7 +16,47 @@ public class Einlesen {
         }
     }
 
-    public static double[][] einlesenBankdaten(File file, boolean print) {
+    public static double[][] einlesenBossShit(File file, boolean print) throws FileNotFoundException {
+        double[][] koordinaten = null;
+        int dimension = 0;
+        String holder;
+        String x;
+        try {
+            //Anzahl Zeilen ermitteln
+            Scanner scanner = new Scanner(file);
+
+            while (scanner.hasNext()) {
+                x = scanner.next();
+                dimension++;
+            }
+            dimension -= 1;
+
+            scanner.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        if(print) {
+            System.out.println("Die Datei enthält " + dimension + " Datensätze");
+        }
+
+        Scanner scanner = new Scanner(file);
+        koordinaten = new double [dimension][785];
+        int index = 0;
+        int number = 0;
+                while(scanner.hasNext()){
+                    holder = scanner.next();
+                    StringTokenizer tokenizer = new StringTokenizer(holder, ",", false);
+                    ArrayList<String> tokens = new ArrayList<String>();
+                };
+
+
+
+
+
+        return koordinaten;
+    }
+
+        public static double[][] einlesenBankdaten(File file, boolean print) {
         double[][] koord = null;
         int dim = 0;
         try {
