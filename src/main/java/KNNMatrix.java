@@ -40,7 +40,7 @@ public class KNNMatrix implements KNN {
         layers = new int[hiddenLayers.length + 2];
         layers[0] = dimensions;
         System.arraycopy(hiddenLayers, 0, layers, 1, hiddenLayers.length);
-        layers[layers.length - 1] = 1;
+        layers[layers.length - 1] = 1; //auf 10 Knoten
 
         weights = new DoubleMatrix[layers.length];
         for (int layer = 0; layer < layers.length - 1; layer++) {
@@ -118,7 +118,7 @@ public class KNNMatrix implements KNN {
         return Pair.of(zs, activations);
     }
 
-    private double[] fehler3(double[][] liste) {
+    private double[] fehler3(double[][] liste) { //Anpassen
         double[] fehler = {0.0, 0.0, 0.0};
 
         for (double[] doubles : liste) {
@@ -145,7 +145,7 @@ public class KNNMatrix implements KNN {
         var outputLayer = layers.length - 1;
         var expected = row[row.length - 1];
 
-        var delta = activations[activations.length - 1]
+        var delta = activations[activations.length - 1] //erweitern um 10
                 .add(-expected)
                 .muli(Functions.sigmoidDerivative(zs[outputLayer]));
 

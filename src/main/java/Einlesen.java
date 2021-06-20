@@ -16,7 +16,7 @@ public class Einlesen {
         }
     }
 
-    public static double[][] einlesenBossShit(File file, boolean print) throws FileNotFoundException {
+    public static double[][] einlesenBossShit(File file, boolean print, int columnCount) throws FileNotFoundException {
         double[][] koordinaten = null;
         int dimension = 0;
         String holder;
@@ -40,19 +40,26 @@ public class Einlesen {
         }
 
         Scanner scanner = new Scanner(file);
-        koordinaten = new double [dimension][785];
+        koordinaten = new double [dimension][columnCount];
         int index = 0;
         int number = 0;
                 while(scanner.hasNext()){
                     holder = scanner.next();
                     StringTokenizer tokenizer = new StringTokenizer(holder, ",", false);
                     ArrayList<String> tokens = new ArrayList<String>();
+                    while (tokenizer.hasMoreTokens()) {
+                        tokens.add(tokenizer.nextToken());
+                    }
+                    if (number != 0) {
+                        for (int i = 0; i < tokens.size(); i++) {
+                            String s = tokens.get(i);
+                            koordinaten[index][i] = Double.valueOf(s)/255;
+                        }
+                        index++;
+                    }
+                    number++;
+                    if (index >= dimension) break;
                 };
-
-
-
-
-
         return koordinaten;
     }
 
