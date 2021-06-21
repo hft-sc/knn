@@ -20,14 +20,14 @@ public class Utils {
     public static void printResult(TestParameters parameters, double[] result) {
         var sb = new StringBuilder();
 
+
         sb.append(String.format("%50s", parameters.toString())).append('\t');
-        sb.append("Genauigkeit:").append(String.format(Locale.ENGLISH, "%,.4f", result[5])).append('\t');
-        sb.append("Trefferquote:").append(String.format(Locale.ENGLISH, "%,.4f", result[10])).append('\t');
-        sb.append("Ausfallrate:").append(String.format(Locale.ENGLISH, "%,.4f", result[11])).append('\t');
-        sb.append("richtigPositiv:").append(String.format("%4d", (int) result[6])).append('\t');
-        sb.append("falschNegativ:").append(String.format("%4d", (int) result[9])).append('\t');
-        sb.append("richtigNegativ:").append(String.format("%4d", (int) result[8])).append('\t');
-        sb.append("falschPositiv:").append(String.format("%4d", (int) result[7]));
+      //  sb.append("Genauigkeit:").append(String.format(Locale.ENGLISH, "%,.4f", result[21])).append('\t');
+          sb.append("Trefferquote Richtig erkannt:").append(String.format(Locale.ENGLISH, "%,.4f",  result[21])).append('\t');
+          sb.append("Trefferqoute Falsch erkannt:").append(String.format(Locale.ENGLISH, "%,.4f", result[22])).append('\t');
+     //   sb.append("richtigPositiv:").append(String.format("%4d", (int) result[6])).append('\t');//    sb.append("falschNegativ:").append(String.format("%4d", (int) result[9])).append('\t');
+     //   sb.append("richtigNegativ:").append(String.format("%4d", (int) result[8])).append('\t');
+    //    sb.append("falschPositiv:").append(String.format("%4d", (int) result[7]));
 
         System.out.println(sb);
     }

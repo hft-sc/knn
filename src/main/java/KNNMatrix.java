@@ -40,7 +40,7 @@ public class KNNMatrix implements KNN {
         layers = new int[hiddenLayers.length + 2];
         layers[0] = dimensions;
         System.arraycopy(hiddenLayers, 0, layers, 1, hiddenLayers.length);
-        layers[layers.length - 1] = 1; //auf 10 Knoten
+        layers[layers.length - 1] = testParameters.getResultCount(); //auf 10 Knoten
 
         weights = new DoubleMatrix[layers.length];
         for (int layer = 0; layer < layers.length - 1; layer++) {
@@ -143,18 +143,26 @@ public class KNNMatrix implements KNN {
         var activations = values.getRight();
 
         var outputLayer = layers.length - 1;
-        var expected = row[row.length - 1];
+        double[] expected = new double[10];
+        expected[(int) row[row.length - 1]] = -1;
 
-        var delta = activations[activations.length - 1] //erweitern um 10
-                .add(-expected)
+
+        // var expected = row[row.length - 1];
+        DoubleMatrix expectedMatrix = new DoubleMatrix(expected);
+        var delta = activations[activations.length - 1]
+                .add(expectedMatrix)
                 .muli(Functions.sigmoidDerivative(zs[outputLayer]));
 
         DoubleMatrix[] biasAdjustments = new DoubleMatrix[biases.length];
         biasAdjustments[biasAdjustments.length - 1] = delta;
         DoubleMatrix[] weightAdjustments = new DoubleMatrix[weights.length];
-        weightAdjustments[weightAdjustments.length - 1] = delta.mmul(activations[weightAdjustments.length - 2].transpose());
+        weightAdjustments[weightAdjustments.length - 1] = delta.mmul(activations[weightAdjustments.length - 2].
 
-        for (int layer = layers.length - 2; layer > 0; layer--) {
+                transpose());
+
+        for (
+                int layer = layers.length - 2;
+                layer > 0; layer--) {
             var z = zs[layer];
             var sp = Functions.sigmoidDerivative(z);
             delta = weights[layer].transpose()
@@ -181,62 +189,113 @@ public class KNNMatrix implements KNN {
 
     @Override
     public double[] evaluieren(double[][] liste) {
-        double[] result = new double[12];
+        double[] result = new double[25];
 
-        int falschPositiv = 0;
-        int falschNegativ = 0;
-        int richtigPositiv = 0;
-        int richtigNegativ = 0;
-        int anzahlPositiv = 0;
-        int anzahlNegativ = 0;
+        int nullRichtig = 0;
+        int einsRichtig = 0;
+        int zweiRichtig = 0;
+        int dreiRichtig = 0;
+        int vierRichtig = 0;
+        int fuenfRichtig = 0;
+        int sechsRichtig = 0;
+        int siebenRichtig = 0;
+        int achtRichtig = 0;
+        int neunRichtig = 0;
+
+        int nullFalsch = 0;
+        int einsFalsch = 0;
+        int zweiFalsch = 0;
+        int dreiFalsch = 0;
+        int vierFalsch = 0;
+        int fuenfFalsch = 0;
+        int sechsFalsch = 0;
+        int siebenFalsch = 0;
+        int achtFalsch = 0;
+        int neunFalsch = 0;
 
         for (double[] data : liste) {
             var values = forward(data);
-            var zs = values.getLeft();
-            var lastLayer = zs[zs.length - 1];
+            var activations = values.getRight();
+            var lastLayer = activations[activations.length - 1];
             var classification = lastLayer.get(0);
-
+           // int test = lastLayer.argmax();
             double expectedOutput = data[data.length - 1];
-            if ((int) expectedOutput == 1) {
-                anzahlPositiv++;
-
-                if (classification < 0.5) {
-                    falschNegativ++;
-                } else {
-                    richtigPositiv++;
+            if (expectedOutput == lastLayer.argmax()) {
+                if (1 == lastLayer.argmax()) {
+                    nullRichtig++;
+                } else if (1 == lastLayer.argmax()) {
+                    einsRichtig++;
+                } else if (2 == lastLayer.argmax()) {
+                    zweiRichtig++;
+                } else if (3 == lastLayer.argmax()) {
+                    dreiRichtig++;
+                } else if (4 == lastLayer.argmax()) {
+                    vierRichtig++;
+                } else if (5 == lastLayer.argmax()) {
+                    fuenfRichtig++;
+                } else if (6 == lastLayer.argmax()) {
+                    sechsRichtig++;
+                } else if (7 == lastLayer.argmax()) {
+                    siebenRichtig++;
+                } else if (8 == lastLayer.argmax()) {
+                    achtRichtig++;
+                } else if (9 == lastLayer.argmax()) {
+                    neunRichtig++;
                 }
-
-            } else if ((expectedOutput == 0)) {
-                anzahlNegativ++;
-
-                if (classification < 0.5) {
-                    richtigNegativ++;
-                } else {
-                    falschPositiv++;
-                }
-
             } else {
-                System.out.println("nonono");
+                if (1 == lastLayer.argmax()) {
+                    nullFalsch++;
+                } else if (1 == lastLayer.argmax()) {
+                    einsFalsch++;
+                } else if (2 == lastLayer.argmax()) {
+                    zweiFalsch++;
+                } else if (3 == lastLayer.argmax()) {
+                    dreiFalsch++;
+                } else if (4 == lastLayer.argmax()) {
+                    vierFalsch++;
+                } else if (5 == lastLayer.argmax()) {
+                    fuenfFalsch++;
+                } else if (6 == lastLayer.argmax()) {
+                    sechsFalsch++;
+                } else if (7 == lastLayer.argmax()) {
+                    siebenFalsch++;
+                } else if (8 == lastLayer.argmax()) {
+                    achtFalsch++;
+                } else if (9 == lastLayer.argmax()) {
+                    neunFalsch++;
+                }
             }
+
         }
 
-        if (anzahlPositiv != richtigPositiv + falschNegativ) System.out.println("Error1 in Auswertung");
-        if (anzahlNegativ != richtigNegativ + falschPositiv) System.out.println("Error2 in Auswertung");
-        if (anzahlPositiv + anzahlNegativ != liste.length) System.out.println("Error3 in Auswertung");
+    result[0]=liste.length;
+    result[1]=nullRichtig;
+    result[2]=einsRichtig;
+    result[3]=zweiRichtig;
+    result[4]=dreiRichtig;
+    result[5]=vierRichtig;
+    result[6]=fuenfRichtig;
+    result[7]=sechsRichtig;
+    result[8]=siebenRichtig;
+    result[9]=achtRichtig;
+    result[10]=neunRichtig;
+    result[11]=nullFalsch;
+    result[12]=einsFalsch;
+    result[13]=zweiFalsch;
+    result[14]=dreiFalsch;
+    result[15]=vierFalsch;
+    result[16]=fuenfFalsch;
+    result[17]=sechsFalsch;
+    result[18]=siebenFalsch;
+    result[19]=achtFalsch;
+    result[20]=neunFalsch;
+    result[21]=(double)(nullRichtig+einsRichtig+zweiRichtig+dreiRichtig+vierRichtig+fuenfRichtig
+            +sechsRichtig +siebenRichtig+achtRichtig+neunRichtig) / (double) liste.length ;
+    result[22]=(double)(nullFalsch+einsFalsch+zweiFalsch+dreiFalsch+vierFalsch+fuenfFalsch
+            +sechsFalsch+siebenFalsch+achtFalsch+neunFalsch) / (double) liste.length ;
 
-        result[0] = liste.length;
-        result[1] = anzahlPositiv;
-        result[2] = anzahlNegativ;
-        result[3] = (double) anzahlPositiv / (double) liste.length;
-        result[4] = (double) anzahlNegativ / (double) liste.length;
-        result[5] = (double) (richtigPositiv + richtigNegativ) / (double) liste.length;
-        result[6] = richtigPositiv;
-        result[7] = falschPositiv;
-        result[8] = richtigNegativ;
-        result[9] = falschNegativ;
-        result[10] = (double) richtigPositiv / (double) (richtigPositiv + falschNegativ);
-        result[11] = (double) falschPositiv / (double) (richtigNegativ + falschPositiv);
 
-        return result;
-    }
+
+    return result;
+}
 }

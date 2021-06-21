@@ -5,20 +5,17 @@ public class Hauptprogramm {
 
     public static void main(String[] args) {
         double[][] daten = new double[0][];
-        try {
             daten = Einlesen.einlesenBossShit(new File("mnist_test.csv"),true,785);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+
 //		double[][] daten = Einlesen.einlesenDiabetes(new File("diabetes_test.csv"), true);
 //		double[][] daten = Einlesen.einlesenVorlesungsbeispiele(new File("svmKnearestNick.txt"));
 //    double[][] daten = Einlesen.einlesenVorlesungsbeispiele(new File("wetter.txt"));
 	//	double[][] daten = Einlesen.einlesenVorlesungsbeispiele(new File("XOR.txt"));
-        int dimension = daten[0].length - 1;
+//        int dimension = daten[0].length - 1;
 
         //Einlesen.auslesen(daten);
 
-        int[] strukturNN = {5};//anzahl Knoten (incl. Bias) pro Hiddenschicht
+//        int[] strukturNN = {5};//anzahl Knoten (incl. Bias) pro Hiddenschicht
 //        KNN netz = new KNN(dimension, strukturNN, 0.5, 0.5, 10);
 
 //        netz.trainieren(daten, true);//Verlustfunktion min

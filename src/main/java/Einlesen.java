@@ -16,7 +16,7 @@ public class Einlesen {
         }
     }
 
-    public static double[][] einlesenBossShit(File file, boolean print, int columnCount) throws FileNotFoundException {
+    public static double[][] einlesenBossShit(File file, boolean print, int columnCount) {
         double[][] koordinaten = null;
         int dimension = 0;
         String holder;
@@ -35,35 +35,42 @@ public class Einlesen {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-        if(print) {
+        if (print) {
             System.out.println("Die Datei enthält " + dimension + " Datensätze");
         }
+        try {
+            Scanner scanner = new Scanner(file);
+            koordinaten = new double[dimension][columnCount];
+            int index = 0;
+            int number = 0;
+            while (scanner.hasNext()) {
+                holder = scanner.next();
+                StringTokenizer tokenizer = new StringTokenizer(holder, ",", false);
+                ArrayList<String> tokens = new ArrayList<String>();
+                while (tokenizer.hasMoreTokens()) {
+                    tokens.add(tokenizer.nextToken());
+                }
+                if (number != 0) {
+                    for (int i = 0; i < tokens.size() -1; i++) {
+                        String s = tokens.get(i);
+                        koordinaten[index][i] = Double.valueOf(s) / 255;
+                    }
+                    String s = tokens.get(tokens.size() -1);
+                    koordinaten[index][tokens.size() -1] = Double.valueOf(s);
 
-        Scanner scanner = new Scanner(file);
-        koordinaten = new double [dimension][columnCount];
-        int index = 0;
-        int number = 0;
-                while(scanner.hasNext()){
-                    holder = scanner.next();
-                    StringTokenizer tokenizer = new StringTokenizer(holder, ",", false);
-                    ArrayList<String> tokens = new ArrayList<String>();
-                    while (tokenizer.hasMoreTokens()) {
-                        tokens.add(tokenizer.nextToken());
-                    }
-                    if (number != 0) {
-                        for (int i = 0; i < tokens.size(); i++) {
-                            String s = tokens.get(i);
-                            koordinaten[index][i] = Double.valueOf(s)/255;
-                        }
-                        index++;
-                    }
-                    number++;
-                    if (index >= dimension) break;
-                };
+                    index++;
+                }
+                number++;
+                if (index >= dimension) break;
+            }
+            ;
+        } catch (FileNotFoundException v) {
+
+        }
         return koordinaten;
     }
 
-        public static double[][] einlesenBankdaten(File file, boolean print) {
+    public static double[][] einlesenBankdaten(File file, boolean print) {
         double[][] koord = null;
         int dim = 0;
         try {
