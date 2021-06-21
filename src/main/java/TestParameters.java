@@ -43,6 +43,7 @@ public class TestParameters {
                 ", maxAlpha=" + maxAlpha +
                 ", minAlpha=" + minAlpha +
                 ", maxEpoche=" + maxEpoch +
+                ", batchSize=" + batchSize +
                 '}';
     }
 }
