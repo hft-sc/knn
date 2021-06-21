@@ -123,10 +123,10 @@ public class KNNMatrix implements KNN {
 
         for (double[] doubles : liste) {
             var values = forward(doubles);
-            var zs = values.getLeft();
+            var activations = values.getRight();
 
             var expected = doubles[doubles.length - 1];
-            final var outputLayer = zs[zs.length - 1];
+            final var outputLayer = activations[activations.length - 1];
             final var output = outputLayer.get(outputLayer.length - 1);
             fehler[0] += Math.pow(expected - output, 2);
             if (output < 0.5 && (int) expected == 1) {
