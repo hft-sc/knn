@@ -2,10 +2,7 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jblas.DoubleMatrix;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class KNNMatrix implements KNN {
 
@@ -42,16 +39,24 @@ public class KNNMatrix implements KNN {
         System.arraycopy(hiddenLayers, 0, layers, 1, hiddenLayers.length);
         layers[layers.length - 1] = testParameters.getResultCount(); //auf 10 Knoten
 
+        var random = new Random();
         weights = new DoubleMatrix[layers.length];
         for (int layer = 0; layer < layers.length - 1; layer++) {
             final var nodeCount = layers[layer];
             final var nodeCountNextLayer = layers[layer + 1];
-            weights[layer] = DoubleMatrix.rand(nodeCountNextLayer, nodeCount);
+//            weights[layer] = DoubleMatrix.rand(nodeCountNextLayer, nodeCount);
+            weights[layer] = new DoubleMatrix(nodeCountNextLayer, nodeCount);
+            for (int node = 0; node < weights[layer].length; node++) {
+                weights[layer].put(node, random.nextDouble() * 2 - 1);
+            }
         }
 
         biases = new DoubleMatrix[layers.length];
         for (int layer = 0; layer < layers.length; layer++) {
-            biases[layer] = DoubleMatrix.rand(layers[layer], 1);
+            biases[layer] = new DoubleMatrix(layers[layer], 1);
+            for (int node = 0; node < biases[layer].length; node++) {
+                biases[layer].put(node, random.nextDouble() * 2 - 1);
+            }
         }
         System.out.println();
     }
@@ -73,12 +78,21 @@ public class KNNMatrix implements KNN {
                     weightAdjustments.add(adjustments.getRight());
                 }
 
-                for (DoubleMatrix[] adjustment : biasAdjustments) {
-                    adjustBiases(adjustment);
+                var totalBiasAdjustments = biasAdjustments.get(0);
+                for (int i = 1; i < biasAdjustments.size(); i++) {
+                    for (int j = 1; j < totalBiasAdjustments.length; j++) {
+                        totalBiasAdjustments[j].addi(biasAdjustments.get(i)[j]);
+                    }
                 }
-                for (DoubleMatrix[] adjustment : weightAdjustments) {
-                    adjustWeights(adjustment);
+                adjustBiases(totalBiasAdjustments);
+
+                var totalWeightAdjustments = weightAdjustments.get(0);
+                for (int i = 1; i < weightAdjustments.size(); i++) {
+                    for (int j = 1; j < totalWeightAdjustments.length; j++) {
+                        totalWeightAdjustments[j].addi(weightAdjustments.get(i)[j]);
+                    }
                 }
+                adjustWeights(totalWeightAdjustments);
             }
 
             if (print && epoch % 100 == 0) {
@@ -144,25 +158,22 @@ public class KNNMatrix implements KNN {
 
         var outputLayer = layers.length - 1;
         double[] expected = new double[10];
-        expected[(int) row[row.length - 1]] = -1;
+        expected[(int) row[row.length - 1]] = 1;
 
 
         // var expected = row[row.length - 1];
         DoubleMatrix expectedMatrix = new DoubleMatrix(expected);
         var delta = activations[activations.length - 1]
-                .add(expectedMatrix)
+                .add(expectedMatrix.neg())
                 .muli(Functions.sigmoidDerivative(zs[outputLayer]));
 
         DoubleMatrix[] biasAdjustments = new DoubleMatrix[biases.length];
         biasAdjustments[biasAdjustments.length - 1] = delta;
         DoubleMatrix[] weightAdjustments = new DoubleMatrix[weights.length];
         weightAdjustments[weightAdjustments.length - 1] = delta.mmul(activations[weightAdjustments.length - 2].
-
                 transpose());
 
-        for (
-                int layer = layers.length - 2;
-                layer > 0; layer--) {
+        for (int layer = layers.length - 2; layer > 0; layer--) {
             var z = zs[layer];
             var sp = Functions.sigmoidDerivative(z);
             delta = weights[layer].transpose()
@@ -177,13 +188,13 @@ public class KNNMatrix implements KNN {
 
     private void adjustWeights(DoubleMatrix[] weightAdjustments) {
         for (int layer = 1; layer < weights.length; layer++) {
-            weights[layer - 1].addi(weightAdjustments[layer].muli(-1));
+            weights[layer - 1].addi(weightAdjustments[layer].mul(-currentAlpha / batchSize));
         }
     }
 
     private void adjustBiases(DoubleMatrix[] biasAdjustments) {
         for (int layer = 1; layer < biases.length; layer++) {
-            biases[layer].addi(biasAdjustments[layer].muli(-1));
+            biases[layer].addi(biasAdjustments[layer].mul(-currentAlpha / batchSize));
         }
     }
 
