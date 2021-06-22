@@ -95,9 +95,10 @@ public class KNNMatrix implements KNN {
                 adjustWeights(totalWeightAdjustments);
             }
 
-            if (print && epoch % 100 == 0) {
+            if (print && epoch % 5 == 0) {
                 double[] errorVector;
                 errorVector = evaluieren(dataSet);
+                System.out.print("Epoch: " + epoch + "  ");
                 Utils.printResult(errorVector);
             }
 
@@ -128,26 +129,6 @@ public class KNNMatrix implements KNN {
         }
 
         return Pair.of(zs, activations);
-    }
-
-    private double[] fehler3(double[][] liste) { //Anpassen
-        double[] fehler = {0.0, 0.0, 0.0};
-
-        for (double[] doubles : liste) {
-            var values = forward(doubles);
-            var activations = values.getRight();
-
-            var expected = doubles[doubles.length - 1];
-            final var outputLayer = activations[activations.length - 1];
-            final var output = outputLayer.get(outputLayer.length - 1);
-            fehler[0] += Math.pow(expected - output, 2);
-            if (output < 0.5 && (int) expected == 1) {
-                fehler[1]++;
-            } else if (output >= 0.5 && (int) expected == 0) {
-                fehler[2]++;
-            }
-        }
-        return fehler;
     }
 
     private Pair<DoubleMatrix[], DoubleMatrix[]> calculateAdjustments(double[] row, Pair<DoubleMatrix[], DoubleMatrix[]> values) {
@@ -226,55 +207,54 @@ public class KNNMatrix implements KNN {
             var values = forward(data);
             var activations = values.getRight();
             var lastLayer = activations[activations.length - 1];
-            var classification = lastLayer.get(0);
-            // int test = lastLayer.argmax();
+
             double expectedOutput = data[data.length - 1];
-            if (expectedOutput == lastLayer.argmax()) {
-                if (1 == lastLayer.argmax()) {
+            final var actualOutput = lastLayer.argmax();
+            if (expectedOutput == actualOutput) {
+                if (0 == actualOutput) {
                     nullRichtig++;
-                } else if (1 == lastLayer.argmax()) {
+                } else if (1 == actualOutput) {
                     einsRichtig++;
-                } else if (2 == lastLayer.argmax()) {
+                } else if (2 == actualOutput) {
                     zweiRichtig++;
-                } else if (3 == lastLayer.argmax()) {
+                } else if (3 == actualOutput) {
                     dreiRichtig++;
-                } else if (4 == lastLayer.argmax()) {
+                } else if (4 == actualOutput) {
                     vierRichtig++;
-                } else if (5 == lastLayer.argmax()) {
+                } else if (5 == actualOutput) {
                     fuenfRichtig++;
-                } else if (6 == lastLayer.argmax()) {
+                } else if (6 == actualOutput) {
                     sechsRichtig++;
-                } else if (7 == lastLayer.argmax()) {
+                } else if (7 == actualOutput) {
                     siebenRichtig++;
-                } else if (8 == lastLayer.argmax()) {
+                } else if (8 == actualOutput) {
                     achtRichtig++;
-                } else if (9 == lastLayer.argmax()) {
+                } else if (9 == actualOutput) {
                     neunRichtig++;
                 }
             } else {
-                if (1 == lastLayer.argmax()) {
+                if (0 == expectedOutput) {
                     nullFalsch++;
-                } else if (1 == lastLayer.argmax()) {
+                } else if (1 == expectedOutput) {
                     einsFalsch++;
-                } else if (2 == lastLayer.argmax()) {
+                } else if (2 == expectedOutput) {
                     zweiFalsch++;
-                } else if (3 == lastLayer.argmax()) {
+                } else if (3 == expectedOutput) {
                     dreiFalsch++;
-                } else if (4 == lastLayer.argmax()) {
+                } else if (4 == expectedOutput) {
                     vierFalsch++;
-                } else if (5 == lastLayer.argmax()) {
+                } else if (5 == expectedOutput) {
                     fuenfFalsch++;
-                } else if (6 == lastLayer.argmax()) {
+                } else if (6 == expectedOutput) {
                     sechsFalsch++;
-                } else if (7 == lastLayer.argmax()) {
+                } else if (7 == expectedOutput) {
                     siebenFalsch++;
-                } else if (8 == lastLayer.argmax()) {
+                } else if (8 == expectedOutput) {
                     achtFalsch++;
-                } else if (9 == lastLayer.argmax()) {
+                } else if (9 == expectedOutput) {
                     neunFalsch++;
                 }
             }
-
         }
 
         result[0] = liste.length;

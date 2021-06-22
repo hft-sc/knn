@@ -3,7 +3,7 @@ import java.io.File;
 public class ExerciseA {
 
     private static final TestParameters[] testParameters = {
-            new TestParameters(new int[]{20, 20}, 1, 0.1, 5000, 20, 10),
+            new TestParameters(new int[]{20, 20}, 1, 0.1, 100, 20, 10),
             //     new TestParameters(new int[]{12, 6}, 2, 0.01, 2000, 40),
     };
 
