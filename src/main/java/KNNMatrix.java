@@ -218,7 +218,7 @@ public class KNNMatrix implements KNN {
             var activations = values.getRight();
             var lastLayer = activations[activations.length - 1];
             var classification = lastLayer.get(0);
-           // int test = lastLayer.argmax();
+            // int test = lastLayer.argmax();
             double expectedOutput = data[data.length - 1];
             if (expectedOutput == lastLayer.argmax()) {
                 if (1 == lastLayer.argmax()) {
@@ -268,34 +268,33 @@ public class KNNMatrix implements KNN {
 
         }
 
-    result[0]=liste.length;
-    result[1]=nullRichtig;
-    result[2]=einsRichtig;
-    result[3]=zweiRichtig;
-    result[4]=dreiRichtig;
-    result[5]=vierRichtig;
-    result[6]=fuenfRichtig;
-    result[7]=sechsRichtig;
-    result[8]=siebenRichtig;
-    result[9]=achtRichtig;
-    result[10]=neunRichtig;
-    result[11]=nullFalsch;
-    result[12]=einsFalsch;
-    result[13]=zweiFalsch;
-    result[14]=dreiFalsch;
-    result[15]=vierFalsch;
-    result[16]=fuenfFalsch;
-    result[17]=sechsFalsch;
-    result[18]=siebenFalsch;
-    result[19]=achtFalsch;
-    result[20]=neunFalsch;
-    result[21]=(double)(nullRichtig+einsRichtig+zweiRichtig+dreiRichtig+vierRichtig+fuenfRichtig
-            +sechsRichtig +siebenRichtig+achtRichtig+neunRichtig) / (double) liste.length ;
-    result[22]=(double)(nullFalsch+einsFalsch+zweiFalsch+dreiFalsch+vierFalsch+fuenfFalsch
-            +sechsFalsch+siebenFalsch+achtFalsch+neunFalsch) / (double) liste.length ;
+        result[0] = liste.length;
+        result[1] = nullRichtig;
+        result[2] = einsRichtig;
+        result[3] = zweiRichtig;
+        result[4] = dreiRichtig;
+        result[5] = vierRichtig;
+        result[6] = fuenfRichtig;
+        result[7] = sechsRichtig;
+        result[8] = siebenRichtig;
+        result[9] = achtRichtig;
+        result[10] = neunRichtig;
+        result[11] = nullFalsch;
+        result[12] = einsFalsch;
+        result[13] = zweiFalsch;
+        result[14] = dreiFalsch;
+        result[15] = vierFalsch;
+        result[16] = fuenfFalsch;
+        result[17] = sechsFalsch;
+        result[18] = siebenFalsch;
+        result[19] = achtFalsch;
+        result[20] = neunFalsch;
+        result[21] = (double) (nullRichtig + einsRichtig + zweiRichtig + dreiRichtig + vierRichtig + fuenfRichtig
+                + sechsRichtig + siebenRichtig + achtRichtig + neunRichtig) / (double) liste.length;
+        result[22] = (double) (nullFalsch + einsFalsch + zweiFalsch + dreiFalsch + vierFalsch + fuenfFalsch
+                + sechsFalsch + siebenFalsch + achtFalsch + neunFalsch) / (double) liste.length;
 
 
-
-    return result;
-}
+        return result;
+    }
 }
