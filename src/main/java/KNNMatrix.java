@@ -97,10 +97,8 @@ public class KNNMatrix implements KNN {
 
             if (print && epoch % 100 == 0) {
                 double[] errorVector;
-                errorVector = fehler3(dataSet);
-                System.out.println("-Epoch: " + epoch + "fNeg " + (int) errorVector[1] + " fPos " + (int) errorVector[2]
-                        + " " + String.format("%.4f", errorVector[0]) + " alpha " + currentAlpha);
-                if ((int) errorVector[1] == 0 && (int) errorVector[2] == 0) break;
+                errorVector = evaluieren(dataSet);
+                Utils.printResult(errorVector);
             }
 
             currentAlpha = Math.max(minAlpha, currentAlpha - (maxAlpha - minAlpha) / maxEpoch);
