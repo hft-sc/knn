@@ -20,13 +20,12 @@ public class Einlesen {
         double[][] koordinaten = null;
         int dimension = 0;
         String holder;
-        String x;
         try {
             //Anzahl Zeilen ermitteln
             Scanner scanner = new Scanner(file);
 
             while (scanner.hasNext()) {
-                x = scanner.next();
+                scanner.next();
                 dimension++;
             }
             dimension -= 1;
@@ -40,31 +39,33 @@ public class Einlesen {
         }
         try {
             Scanner scanner = new Scanner(file);
+            scanner.next(); //skip header line
+
             koordinaten = new double[dimension][columnCount];
             int index = 0;
-            int number = 0;
             while (scanner.hasNext()) {
                 holder = scanner.next();
                 StringTokenizer tokenizer = new StringTokenizer(holder, ",", false);
                 ArrayList<String> tokens = new ArrayList<String>();
+
+                var label = tokenizer.nextToken();
                 while (tokenizer.hasMoreTokens()) {
                     tokens.add(tokenizer.nextToken());
                 }
-                if (number != 0) {
-                    for (int i = 0; i < tokens.size() -1; i++) {
-                        String s = tokens.get(i);
-                        koordinaten[index][i] = Double.valueOf(s) / 255;
-                    }
-                    String s = tokens.get(tokens.size() -1);
-                    koordinaten[index][tokens.size() -1] = Double.valueOf(s);
+                //put label from the front to the back
+                tokens.add(label);
 
-                    index++;
+                for (int i = 0; i < tokens.size() - 1; i++) {
+                    String s = tokens.get(i);
+                    koordinaten[index][i] = Double.parseDouble(s) / 255;
                 }
-                number++;
+                String s = tokens.get(tokens.size() - 1);
+                koordinaten[index][tokens.size() - 1] = Double.parseDouble(s);
+
+                index++;
                 if (index >= dimension) break;
             }
-            ;
-        } catch (FileNotFoundException v) {
+        } catch (FileNotFoundException ignored) {
 
         }
         return koordinaten;
