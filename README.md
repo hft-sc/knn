@@ -1,3 +1,13 @@
+# how to run
+
+- extract the 2 zip files for a trimmed version of the training and test data
+- or download and extract from https://www.kaggle.com/oddrationale/mnist-in-csv
+- Adjust the file names in `ExerciseA.java` for `trainData` and `testData` if necessary
+
+## Smaller dataset
+
+- For faster runs trim the dataset with `head -n <number of rows> input.csv > output.csv`
+
 # soft computing
 
 ## Aufgabe a
